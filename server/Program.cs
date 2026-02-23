@@ -45,7 +45,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(o => o.JsonSerializerOptions.ReferenceHandler =
+        System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 builder.Services.AddMqttControllers();
 
 builder.Services.AddSingleton<TurbineStateService>();
@@ -67,11 +69,8 @@ await mqtt.ConnectAsync(
     builder.Configuration["Mqtt:BrokerHost"]!,
     int.Parse(builder.Configuration["Mqtt:BrokerPort"]!));
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors();
 app.UseAuthentication();
