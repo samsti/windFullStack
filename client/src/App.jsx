@@ -1,10 +1,22 @@
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
+import Dashboard    from './pages/Dashboard'
 import TurbineDetail from './pages/TurbineDetail'
+import AlertsPage   from './pages/AlertsPage'
+import AlertBell    from './components/AlertBell'
 
 function Navbar() {
   const { pathname } = useLocation()
-  const isHome = pathname === '/'
+
+  const link = (to, label) => (
+    <Link
+      to={to}
+      className={`text-sm transition-colors ${
+        pathname === to ? 'text-white font-medium' : 'text-gray-400 hover:text-white'
+      }`}
+    >
+      {label}
+    </Link>
+  )
 
   return (
     <nav className="bg-gray-900/80 backdrop-blur border-b border-gray-800 px-6 py-3 flex items-center gap-6 sticky top-0 z-10">
@@ -15,12 +27,12 @@ function Navbar() {
 
       <div className="h-4 w-px bg-gray-700" />
 
-      <Link
-        to="/"
-        className={`text-sm transition-colors ${isHome ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
-      >
-        Dashboard
-      </Link>
+      {link('/', 'Dashboard')}
+      {link('/alerts', 'Alerts')}
+
+      <div className="ml-auto">
+        <AlertBell />
+      </div>
     </nav>
   )
 }
@@ -34,6 +46,7 @@ export default function App() {
           <Routes>
             <Route path="/"            element={<Dashboard />} />
             <Route path="/turbine/:id" element={<TurbineDetail />} />
+            <Route path="/alerts"      element={<AlertsPage />} />
           </Routes>
         </main>
       </div>

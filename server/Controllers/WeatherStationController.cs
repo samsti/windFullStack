@@ -12,7 +12,8 @@ public class WeatherStationController(
     AppDbContext db,
     IMqttClientService mqtt,
     TurbineStateService state,
-    IConfiguration config) : MqttController
+    IConfiguration config,
+    AlertService alerts) : MqttController
 {
     [MqttRoute("farm/+/windmill/{turbineId}/telemetry")]
     public async Task HandleTelemetry(string turbineId, TurbineTelemetry data)
@@ -62,6 +63,16 @@ public class WeatherStationController(
             Vibration          = data.Vibration,
             Status             = data.Status,
         });
+
+        await alerts.GenerateThresholdAlertsAsync(
+            turbineId,
+            data.Timestamp,
+            running: data.Status == "running",
+            generatorTemp: data.GeneratorTemp,
+            gearboxTemp:   data.GearboxTemp,
+            rotorSpeed:    data.RotorSpeed,
+            vibration:     data.Vibration,
+            windSpeed:     data.WindSpeed);
 
         await db.SaveChangesAsync();
         logger.LogInformation("Saved telemetry for turbine {TurbineId}", turbineId);

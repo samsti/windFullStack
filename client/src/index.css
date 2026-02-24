@@ -8,3 +8,20 @@
   scrollbar-width: thin;
   scrollbar-color: #374151 transparent;
 }
+
+@keyframes windmill-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes wind-streak {
+  0%   { transform: translateX(0);     opacity: 0; }
+  12%  { opacity: 0.75; }
+  78%  { opacity: 0.5; }
+  100% { transform: translateX(175px); opacity: 0; }
+}
+
+@keyframes power-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
+}
