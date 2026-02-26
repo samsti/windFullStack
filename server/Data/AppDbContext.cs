@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<TurbineMetric> TurbineMetrics => Set<TurbineMetric>();
     public DbSet<Alert> Alerts => Set<Alert>();
     public DbSet<OperatorCommand> OperatorCommands => Set<OperatorCommand>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

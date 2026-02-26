@@ -16,15 +16,23 @@ const COLORS = {
   nacelleDirection:   '#a78bfa',
 }
 
-function formatTime(ts) {
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+function makeFormatter(bucket) {
+  if (bucket >= 1440) return ts => new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
+  if (bucket >= 60)   return ts => new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
+  return ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function CustomTooltip({ active, payload, label }) {
+function tooltipLabel(bucket, ts) {
+  if (bucket >= 1440) return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+  if (bucket >= 60)   return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return new Date(ts).toLocaleTimeString()
+}
+
+function CustomTooltip({ active, payload, label, bucket = 1 }) {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 text-xs shadow-xl">
-      <p className="text-gray-400 mb-2">{new Date(label).toLocaleTimeString()}</p>
+      <p className="text-gray-400 mb-2">{tooltipLabel(bucket, label)}</p>
       {payload.map(p => (
         <div key={p.dataKey} className="flex items-center gap-2 mb-1">
           <span style={{ color: p.color }}>●</span>
@@ -36,7 +44,8 @@ function CustomTooltip({ active, payload, label }) {
   )
 }
 
-export default function TelemetryChart({ data, metrics, title }) {
+export default function TelemetryChart({ data, metrics, title, bucket = 1 }) {
+  const formatXAxis = makeFormatter(bucket)
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
       <h3 className="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">
@@ -47,7 +56,7 @@ export default function TelemetryChart({ data, metrics, title }) {
           <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
           <XAxis
             dataKey="recordedAt"
-            tickFormatter={formatTime}
+            tickFormatter={formatXAxis}
             tick={{ fill: '#6b7280', fontSize: 11 }}
             stroke="#374151"
             tickLine={false}
@@ -59,7 +68,7 @@ export default function TelemetryChart({ data, metrics, title }) {
             axisLine={false}
             width={42}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip bucket={bucket} />} />
           <Legend
             wrapperStyle={{ fontSize: 11, color: '#9ca3af', paddingTop: 8 }}
             iconType="circle"

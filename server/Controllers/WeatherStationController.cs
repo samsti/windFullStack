@@ -23,12 +23,8 @@ public class WeatherStationController(
         var turbine = await db.Turbines.FindAsync(turbineId);
         if (turbine is null)
         {
-            db.Turbines.Add(new Turbine
-            {
-                Id       = turbineId,
-                Name     = data.TurbineName,
-                Location = string.Empty,
-            });
+            turbine = new Turbine { Id = turbineId, Name = data.TurbineName, Location = string.Empty };
+            db.Turbines.Add(turbine);
 
             // First contact — set the reporting interval
             if (state.MarkIfNew(turbineId))
@@ -67,8 +63,9 @@ public class WeatherStationController(
         await alerts.GenerateThresholdAlertsAsync(
             turbineId,
             data.Timestamp,
-            running: data.Status == "running",
-            generatorTemp: data.GeneratorTemp,
+            running:         data.Status == "running",
+            isInMaintenance: turbine.IsInMaintenance,
+            generatorTemp:   data.GeneratorTemp,
             gearboxTemp:   data.GearboxTemp,
             rotorSpeed:    data.RotorSpeed,
             vibration:     data.Vibration,

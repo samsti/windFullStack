@@ -65,12 +65,14 @@ public class AlertService(AppDbContext db)
         string turbineId,
         DateTime timestamp,
         bool running,
+        bool isInMaintenance,
         double generatorTemp,
         double gearboxTemp,
         double rotorSpeed,
         double vibration,
         double windSpeed)
     {
+        if (isInMaintenance) return;
         var checks = EvaluateThresholds(running, generatorTemp, gearboxTemp, rotorSpeed, vibration, windSpeed);
         if (checks.Count == 0) return;
 

@@ -4,6 +4,15 @@ import { getTurbines, getFarmOverview } from '../services/api'
 import { useSSE } from '../hooks/useSSE'
 import TurbineCard from '../components/TurbineCard'
 import { TotalPowerChart, WindAndTempChart } from '../components/charts/FarmOverviewChart'
+import { getTurbineDisplayState } from '../utils/turbineStatus'
+
+const OVERVIEW_RANGES = [
+  { label: '1h',  minutes: 60,     bucket: 1    },
+  { label: '1d',  minutes: 1440,   bucket: 30   },
+  { label: '30d', minutes: 43200,  bucket: 720  },
+  { label: '90d', minutes: 129600, bucket: 1440 },
+  { label: 'All', minutes: 0,      bucket: 1440 },
+]
 
 function StatCard({ label, value, unit, color = 'text-white' }) {
   return (
@@ -18,16 +27,19 @@ function StatCard({ label, value, unit, color = 'text-white' }) {
 }
 
 export default function Dashboard() {
+  const [overviewRangeIdx, setOverviewRangeIdx] = useState(0)
+  const overviewRange = OVERVIEW_RANGES[overviewRangeIdx]
+
   const { data: initial, isLoading } = useQuery({
     queryKey: ['turbines'],
     queryFn: getTurbines,
     refetchInterval: 10_000,
   })
 
-  const { data: overview } = useQuery({
-    queryKey: ['overview'],
-    queryFn: () => getFarmOverview(60),
-    refetchInterval: 30_000,
+  const { data: overview, isFetching: overviewFetching } = useQuery({
+    queryKey: ['overview', overviewRange.minutes, overviewRange.bucket],
+    queryFn: () => getFarmOverview(overviewRange.minutes, overviewRange.bucket),
+    refetchInterval: overviewRange.minutes <= 60 ? 30_000 : overviewRange.minutes <= 1440 ? 60_000 : 5 * 60_000,
   })
 
   const { data: live, connected } = useSSE('/api/turbines/live')
@@ -38,7 +50,8 @@ export default function Dashboard() {
     else if (initial) setTurbines(initial)
   }, [live, initial])
 
-  const online  = turbines.filter(t => t.latestMetric?.status === 'running').length
+  const online  = turbines.filter(t => getTurbineDisplayState(t) === 'running').length
+  const offline = turbines.filter(t => getTurbineDisplayState(t) === 'offline').length
   const totalPower  = turbines.reduce((s, t) => s + (t.latestMetric?.powerOutput ?? 0), 0)
   const avgWind     = turbines.length
     ? turbines.reduce((s, t) => s + (t.latestMetric?.windSpeed ?? 0), 0) / turbines.length
@@ -56,8 +69,11 @@ export default function Dashboard() {
           <p className="text-gray-400 mt-1 text-sm">
             {turbines.length} turbines &nbsp;·&nbsp;
             <span className="text-emerald-400">{online} running</span>
-            {turbines.length - online > 0 && (
-              <span className="text-red-400"> &nbsp;·&nbsp; {turbines.length - online} stopped</span>
+            {turbines.length - online - offline > 0 && (
+              <span className="text-red-400"> &nbsp;·&nbsp; {turbines.length - online - offline} stopped</span>
+            )}
+            {offline > 0 && (
+              <span className="text-gray-500"> &nbsp;·&nbsp; {offline} offline</span>
             )}
           </p>
         </div>
@@ -96,13 +112,42 @@ export default function Dashboard() {
       )}
 
       {/* Farm-wide trend charts */}
-      {overview?.length > 0 && (
+      {(overview?.length > 0 || overviewFetching) && (
         <div className="mt-10">
-          <h2 className="text-lg font-semibold text-white mb-4">Farm Trends</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <TotalPowerChart data={overview} />
-            <WindAndTempChart data={overview} />
+          <div className="flex items-center gap-4 mb-4">
+            <h2 className="text-lg font-semibold text-white">Farm Trends</h2>
+
+            <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
+              {OVERVIEW_RANGES.map((r, i) => (
+                <button
+                  key={r.label}
+                  onClick={() => setOverviewRangeIdx(i)}
+                  className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    overviewRangeIdx === i
+                      ? 'bg-gray-800 text-white'
+                      : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+
+            {overviewFetching && (
+              <span className="text-xs text-gray-600">Loading…</span>
+            )}
           </div>
+
+          {overview?.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TotalPowerChart data={overview} bucket={overviewRange.bucket} />
+              <WindAndTempChart data={overview} bucket={overviewRange.bucket} />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-40 text-gray-600 text-sm border border-gray-800 rounded-xl">
+              No data for this range
+            </div>
+          )}
         </div>
       )}
     </div>

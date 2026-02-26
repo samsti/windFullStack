@@ -8,6 +8,10 @@ public class Turbine
     public bool IsOnline { get; set; }
     public DateTime LastSeenAt { get; set; }
 
+    public bool      IsInMaintenance   { get; set; }
+    public DateTime? MaintenanceSince  { get; set; }
+    public string?   MaintenanceReason { get; set; }
+
     public ICollection<TurbineMetric> Metrics { get; set; } = [];
     public ICollection<Alert> Alerts { get; set; } = [];
     public ICollection<OperatorCommand> Commands { get; set; } = [];

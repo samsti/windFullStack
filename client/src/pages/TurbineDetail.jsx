@@ -1,22 +1,35 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { getTurbineDisplayState } from '../utils/turbineStatus'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getTurbine, getTurbineMetrics, getTurbineAlerts, acknowledgeAlert } from '../services/api'
 import { useSSE } from '../hooks/useSSE'
 import TelemetryChart from '../components/charts/TelemetryChart'
 import WindmillVisualization from '../components/WindmillVisualization'
+import TurbineControls from '../components/TurbineControls'
+
+const RANGES = [
+  { label: '1h',  minutes: 60,     bucket: 1    },
+  { label: '1d',  minutes: 1440,   bucket: 30   },
+  { label: '30d', minutes: 43200,  bucket: 720  },
+  { label: '90d', minutes: 129600, bucket: 1440 },
+  { label: 'All', minutes: 0,      bucket: 1440 },
+]
 
 export default function TurbineDetail() {
   const { id } = useParams()
+  const [rangeIdx, setRangeIdx] = useState(0)
+  const range = RANGES[rangeIdx]
 
   const { data: turbine } = useQuery({
     queryKey: ['turbine', id],
     queryFn: () => getTurbine(id),
   })
 
-  const { data: history } = useQuery({
-    queryKey: ['metrics', id],
-    queryFn: () => getTurbineMetrics(id, 60),
-    refetchInterval: 10_000,
+  const { data: history, isFetching: historyFetching } = useQuery({
+    queryKey: ['metrics', id, range.minutes, range.bucket],
+    queryFn: () => getTurbineMetrics(id, range.minutes, range.bucket),
+    refetchInterval: range.minutes <= 60 ? 10_000 : range.minutes <= 1440 ? 60_000 : 5 * 60_000,
   })
 
   const qc = useQueryClient()
@@ -36,7 +49,12 @@ export default function TurbineDetail() {
   const live   = liveAll?.find(t => t.id === id)
   const latest = live?.latestMetric ?? history?.[history.length - 1]
 
-  const isRunning = latest?.status === 'running'
+  // Use SSE for running/stopped/offline (updates every telemetry tick)
+  // Use REST turbine query for maintenance (SSE only fires on TurbineMetric changes, not Turbine)
+  const statusSource    = live ?? turbine
+  const displayState    = getTurbineDisplayState(statusSource)
+  const isRunning       = displayState === 'running'
+  const isInMaintenance = turbine?.isInMaintenance ?? false
 
   return (
     <div>
@@ -60,32 +78,83 @@ export default function TurbineDetail() {
             {connected ? 'Live' : 'Connecting…'}
           </span>
 
-          {latest && (
+          {statusSource && (
             <span className={`px-3 py-1 rounded-full text-sm font-medium border ${
-              isRunning
-                ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                : 'bg-red-950/60 text-red-400 border-red-800'
+              displayState === 'running' ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800' :
+              displayState === 'stopped' ? 'bg-red-950/60 text-red-400 border-red-800' :
+              'bg-gray-800/60 text-gray-500 border-gray-700'
             }`}>
-              {latest.status}
+              {displayState}
+            </span>
+          )}
+          {isInMaintenance && (
+            <span className="px-3 py-1 rounded-full text-sm font-medium border bg-violet-950/60 text-violet-400 border-violet-800 flex items-center gap-1.5">
+              🔧 Maintenance
             </span>
           )}
         </div>
       </div>
 
+      {/* ── Offline / maintenance banners ── */}
+      {displayState === 'offline' && (
+        <div className="mb-4 px-4 py-3 rounded-xl border border-gray-700 bg-gray-900/80 text-gray-400 text-sm flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />
+          No telemetry received for over 5 minutes — turbine may be offline.
+        </div>
+      )}
+      {isInMaintenance && statusSource?.maintenanceReason && (
+        <div className="mb-4 px-4 py-3 rounded-xl border border-violet-800/40 bg-violet-950/20 text-violet-300 text-sm flex items-center gap-2">
+          <span className="flex-shrink-0">🔧</span>
+          Maintenance in progress{statusSource.maintenanceReason ? `: ${statusSource.maintenanceReason}` : ''}. Alerts suppressed.
+        </div>
+      )}
+
       {/* ── Live visualisation ── */}
       <WindmillVisualization latest={latest} isRunning={isRunning} />
 
+      {/* ── Operator controls ── */}
+      <TurbineControls
+        turbineId={id}
+        isRunning={isRunning}
+        currentPitch={latest?.bladePitch}
+        isInMaintenance={isInMaintenance}
+      />
+
       {/* ── Historical trends ── */}
       <div className="mb-2">
-        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
-          Historical trends · last 60 min
-        </h2>
+        <div className="flex items-center gap-4 mb-4">
+          <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+            Historical trends
+          </h2>
+
+          {/* Range tabs */}
+          <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
+            {RANGES.map((r, i) => (
+              <button
+                key={r.label}
+                onClick={() => setRangeIdx(i)}
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  rangeIdx === i
+                    ? 'bg-gray-800 text-white'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          {historyFetching && (
+            <span className="text-xs text-gray-600">Loading…</span>
+          )}
+        </div>
 
         {history && history.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TelemetryChart
               data={history}
               title="Power & Wind"
+              bucket={range.bucket}
               metrics={[
                 { key: 'windSpeed',   label: 'Wind Speed (m/s)' },
                 { key: 'powerOutput', label: 'Power Output (kW)' },
@@ -94,6 +163,7 @@ export default function TurbineDetail() {
             <TelemetryChart
               data={history}
               title="Temperatures"
+              bucket={range.bucket}
               metrics={[
                 { key: 'generatorTemp',      label: 'Generator (°C)' },
                 { key: 'gearboxTemp',        label: 'Gearbox (°C)' },
@@ -103,8 +173,8 @@ export default function TurbineDetail() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-40 text-gray-500 gap-2 border border-gray-800 rounded-xl">
-            <p className="text-base font-medium">No history yet</p>
-            <p className="text-sm">Charts will appear as telemetry accumulates</p>
+            <p className="text-base font-medium">No data for this range</p>
+            <p className="text-sm">Try a shorter time window or wait for more telemetry</p>
           </div>
         )}
       </div>

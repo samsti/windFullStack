@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <!-- Server-Sent Events -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="StateleSSE.AspNetCore" Version="4.0.0-preview.1" />
 
     <!-- MQTT broker communication -->

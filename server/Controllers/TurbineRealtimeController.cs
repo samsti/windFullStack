@@ -42,6 +42,7 @@ public class TurbineRealtimeController(
             result.Add(new
             {
                 t.Id, t.Name, t.Location, t.IsOnline, t.LastSeenAt,
+                t.IsInMaintenance, t.MaintenanceSince, t.MaintenanceReason,
                 LatestMetric = latest
             });
         }

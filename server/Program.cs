@@ -1,11 +1,12 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mqtt.Controllers;
 using StateleSSE.AspNetCore;
 using StateleSSE.AspNetCore.EfRealtime;
-using System.Text;
 using WindTurbineApi.Data;
+using WindTurbineApi.Models;
 using WindTurbineApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,14 +33,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+            ValidIssuer              = builder.Configuration["Jwt:Issuer"],
+            ValidAudience            = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey         = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
         };
     });
 
@@ -52,6 +53,7 @@ builder.Services.AddMqttControllers();
 
 builder.Services.AddSingleton<TurbineStateService>();
 builder.Services.AddScoped<AlertService>();
+builder.Services.AddHostedService<OfflineDetectionService>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -60,8 +62,22 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var db  = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     db.Database.Migrate();
+
+    // Seed default admin user if no users exist
+    if (!db.Users.Any())
+    {
+        db.Users.Add(new User
+        {
+            Email        = cfg["Seed:AdminEmail"]!,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(cfg["Seed:AdminPassword"]!),
+            Name         = cfg["Seed:AdminName"]!,
+            CreatedAt    = DateTime.UtcNow,
+        });
+        db.SaveChanges();
+    }
 }
 
 var mqtt = app.Services.GetRequiredService<IMqttClientService>();
