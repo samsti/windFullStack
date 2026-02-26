@@ -25,7 +25,6 @@ function Navbar({ onLogout }) {
   return (
     <nav className="bg-gray-900/80 backdrop-blur border-b border-gray-800 px-6 py-3 flex items-center gap-6 sticky top-0 z-10">
       <Link to="/" className="flex items-center gap-2">
-        <span className="text-cyan-400 text-xl">⚡</span>
         <span className="font-bold text-white tracking-wide text-sm">WindMonitor</span>
       </Link>
 
