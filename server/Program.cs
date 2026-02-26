@@ -11,6 +11,11 @@ using WindTurbineApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var jwtKey = builder.Configuration["Jwt:Key"];
+Console.WriteLine($"[Startup] Jwt:Key present={!string.IsNullOrEmpty(jwtKey)}, length={jwtKey?.Length ?? 0}");
+if (string.IsNullOrEmpty(jwtKey))
+    throw new InvalidOperationException("Jwt__Key environment variable is not set. Set it in Railway Variables.");
+
 builder.Services.AddInMemorySseBackplane();
 builder.Services.AddEfRealtime();
 builder.Services.AddDbContext<AppDbContext>((sp, options) =>
@@ -40,7 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer              = builder.Configuration["Jwt:Issuer"],
             ValidAudience            = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey         = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+                Encoding.UTF8.GetBytes(jwtKey)),
         };
     });
 
