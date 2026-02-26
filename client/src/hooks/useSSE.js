@@ -6,7 +6,8 @@ export function useSSE(path) {
 
   useEffect(() => {
     const connectionId = crypto.randomUUID()
-    const es = new EventSource(`${path}?connectionId=${connectionId}`)
+    const base = import.meta.env.VITE_API_URL ?? ''
+    const es = new EventSource(`${base}${path}?connectionId=${connectionId}`)
 
     es.onopen = () => setConnected(true)
 
