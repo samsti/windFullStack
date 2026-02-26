@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WindTurbineApi.Services;
 
 namespace WindTurbineApi.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/alerts")]
 public class AlertsController(AlertService alertService) : ControllerBase

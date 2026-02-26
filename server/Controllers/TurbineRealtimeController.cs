@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StateleSSE.AspNetCore;
@@ -7,6 +8,7 @@ using WindTurbineApi.Models;
 
 namespace WindTurbineApi.Controllers;
 
+[Authorize]
 [ApiController]
 public class TurbineRealtimeController(
     ISseBackplane backplane,

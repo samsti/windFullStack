@@ -5,6 +5,7 @@ using WindTurbineApi.Data;
 
 namespace WindTurbineApi.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/commands")]
 public class CommandsController(AppDbContext db) : ControllerBase

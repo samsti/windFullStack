@@ -10,6 +10,7 @@ using WindTurbineApi.Models;
 
 namespace WindTurbineApi.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/turbines")]
 public class TurbinesController(AppDbContext db) : ControllerBase
@@ -144,7 +145,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
     }
 
     // POST /api/turbines/{id}/command — forward operator command via MQTT
-    [Authorize]
     [HttpPost("{id}/command")]
     public async Task<IActionResult> SendCommand(
         string id,
@@ -204,7 +204,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
     }
 
     // GET /api/turbines/{id}/commands?limit=50 — full command audit log
-    [Authorize]
     [HttpGet("{id}/commands")]
     public async Task<IActionResult> GetCommands(string id, [FromQuery] int limit = 50)
     {
