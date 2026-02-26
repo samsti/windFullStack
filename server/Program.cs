@@ -11,10 +11,18 @@ using WindTurbineApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var jwtKey = builder.Configuration["Jwt:Key"];
-Console.WriteLine($"[Startup] Jwt:Key present={!string.IsNullOrEmpty(jwtKey)}, length={jwtKey?.Length ?? 0}");
+// Debug: print all env var names so we can see what Railway passes
+foreach (var k in Environment.GetEnvironmentVariables().Keys.Cast<string>().OrderBy(x => x))
+    Console.WriteLine($"[ENV] {k}");
+
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? Environment.GetEnvironmentVariable("Jwt__Key")
+    ?? Environment.GetEnvironmentVariable("JWT__KEY")
+    ?? Environment.GetEnvironmentVariable("JWT_KEY");
+
+Console.WriteLine($"[Startup] Jwt key present={!string.IsNullOrEmpty(jwtKey)}, length={jwtKey?.Length ?? 0}");
 if (string.IsNullOrEmpty(jwtKey))
-    throw new InvalidOperationException("Jwt__Key environment variable is not set. Set it in Railway Variables.");
+    throw new InvalidOperationException("JWT key is not set. Check Railway Variables.");
 
 builder.Services.AddInMemorySseBackplane();
 builder.Services.AddEfRealtime();
