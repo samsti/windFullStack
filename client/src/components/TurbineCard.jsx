@@ -6,7 +6,7 @@ function getWorstStatus(m, isRunning) {
   const checks = [
     m.generatorTemp > 80 || m.gearboxTemp > 80 ? 'critical'
       : m.generatorTemp > 65 || m.gearboxTemp > 65 ? 'warning' : 'good',
-    m.vibration > 0.6 ? 'critical' : m.vibration > 0.3 ? 'warning' : 'good',
+    m.vibration > 4.0 ? 'critical' : m.vibration > 2.0 ? 'warning' : 'good',
     m.rotorSpeed > 23 || m.rotorSpeed < 2 ? 'critical'
       : m.rotorSpeed > 20 || m.rotorSpeed < 5 ? 'warning' : 'good',
     m.windSpeed > 25 || m.windSpeed < 2 ? 'critical'
