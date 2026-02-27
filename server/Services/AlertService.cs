@@ -33,10 +33,10 @@ public class AlertService(AppDbContext db)
             results.Add(new("Gearbox Temp", "Warning", $"Gearbox Temp warning: {gearboxTemp:F1}°C (limit 65°C)"));
 
         // Vibration
-        if (vibration > 0.6)
-            results.Add(new("Vibration", "Critical", $"Vibration critical: {vibration:F2} g (limit 0.60 g)"));
-        else if (vibration > 0.3)
-            results.Add(new("Vibration", "Warning", $"Vibration warning: {vibration:F2} g (limit 0.30 g)"));
+        if (vibration > 4.0)
+            results.Add(new("Vibration", "Critical", $"Vibration critical: {vibration:F2} g (limit 4.00 g)"));
+        else if (vibration > 2.0)
+            results.Add(new("Vibration", "Warning", $"Vibration warning: {vibration:F2} g (limit 2.00 g)"));
 
         // Rotor speed (only meaningful when running)
         if (running)

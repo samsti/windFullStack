@@ -18,7 +18,7 @@ const STATUS = {
  * rotorSpeed  : cut-in ≈5 RPM, rated ≈15, cut-out ≈25
  * temperatures: warn > 65 °C, critical > 80 °C (for both generator & gearbox)
  * windSpeed   : too low < 3 m/s; storm warning > 20; emergency > 25
- * vibration   : warn > 0.3 g; critical > 0.6 g
+ * vibration   : warn > 2.0 g; critical > 4.0 g
  * powerOutput : if running but < 50 kW something is off → warning
  */
 function classify(key, value, running) {
@@ -36,7 +36,7 @@ function classify(key, value, running) {
       return value > 25 || value < 2 ? 'critical'
            : value > 20 || value < 5 ? 'warning' : 'good'
     case 'vibration':
-      return value > 0.6 ? 'critical' : value > 0.3 ? 'warning' : 'good'
+      return value > 4.0 ? 'critical' : value > 2.0 ? 'warning' : 'good'
     default:
       return 'good'
   }
