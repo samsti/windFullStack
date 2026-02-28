@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { login, auth } from '../services/api'
 
 export default function LoginModal({ onSuccess }) {
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
+  const [email,    setEmail]    = useState('admin@wind.local')
+  const [password, setPassword] = useState('admin123')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
 
