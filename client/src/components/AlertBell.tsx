@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getAlerts } from '../services/api'
+import type { Alert } from '../types'
 
 export default function AlertBell() {
-  const { data = [] } = useQuery({
+  const { data = [] } = useQuery<Alert[]>({
     queryKey: ['alerts', 'unack'],
     queryFn: () => getAlerts(100, true),
     refetchInterval: 15_000,

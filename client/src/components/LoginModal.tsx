@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { login, auth } from '../services/api'
 
-export default function LoginModal({ onSuccess }) {
+interface LoginModalProps {
+  onSuccess: () => void
+}
+
+export default function LoginModal({ onSuccess }: LoginModalProps) {
   const [email,    setEmail]    = useState('admin@wind.local')
   const [password, setPassword] = useState('admin123')
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)

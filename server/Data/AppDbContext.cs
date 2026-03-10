@@ -20,6 +20,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(t => t.Metrics)
             .HasForeignKey(m => m.TurbineId);
 
+        modelBuilder.Entity<TurbineMetric>()
+            .HasIndex(m => new { m.TurbineId, m.RecordedAt })
+            .HasDatabaseName("IX_TurbineMetrics_TurbineId_RecordedAt");
+
         modelBuilder.Entity<Alert>()
             .HasOne(a => a.Turbine)
             .WithMany(t => t.Alerts)

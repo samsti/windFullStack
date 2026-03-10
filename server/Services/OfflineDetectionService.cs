@@ -13,7 +13,6 @@ public class OfflineDetectionService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Wait for MQTT connections and startup to complete
         await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -35,7 +34,6 @@ public class OfflineDetectionService(
 
         var cutoff = DateTime.UtcNow - StaleAge;
 
-        // Turbines that still claim to be online but haven't sent telemetry recently
         var stale = await db.Turbines
             .Where(t => t.IsOnline && t.LastSeenAt < cutoff)
             .ToListAsync(ct);
@@ -51,10 +49,8 @@ public class OfflineDetectionService(
         {
             t.IsOnline = false;
 
-            // Suppress alert if turbine is in maintenance
             if (t.IsInMaintenance) continue;
 
-            // Deduplicate — skip if an unacknowledged offline alert already exists within 24 h
             bool alreadyAlerted = await db.Alerts.AnyAsync(a =>
                 a.TurbineId       == t.Id  &&
                 !a.IsAcknowledged          &&

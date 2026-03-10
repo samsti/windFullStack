@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom'
 import { getTurbineDisplayState } from '../utils/turbineStatus'
+import type { Turbine, TurbineMetric } from '../types'
 
-function getWorstStatus(m, isRunning) {
+type StatusLevel = 'critical' | 'warning' | 'good' | 'idle'
+type BorderKey = StatusLevel | 'offline' | 'maintenance'
+
+function getWorstStatus(m: TurbineMetric, isRunning: boolean): StatusLevel {
   if (!m || !isRunning) return 'idle'
-  const checks = [
+  const checks: StatusLevel[] = [
     m.generatorTemp > 80 || m.gearboxTemp > 80 ? 'critical'
       : m.generatorTemp > 65 || m.gearboxTemp > 65 ? 'warning' : 'good',
     m.vibration > 4.0 ? 'critical' : m.vibration > 2.0 ? 'warning' : 'good',
@@ -17,7 +21,7 @@ function getWorstStatus(m, isRunning) {
   return 'good'
 }
 
-const BORDER = {
+const BORDER: Record<BorderKey, string> = {
   critical: 'border-red-800 shadow-sm shadow-red-950/80 hover:border-red-700',
   warning:  'border-amber-700/70 hover:border-amber-600',
   good:     'border-gray-800 hover:border-cyan-800',
@@ -26,7 +30,13 @@ const BORDER = {
   maintenance: 'border-violet-800/60 hover:border-violet-700',
 }
 
-function Metric({ label, value, unit }) {
+interface MetricProps {
+  label: string
+  value: number | null | undefined
+  unit: string
+}
+
+function Metric({ label, value, unit }: MetricProps) {
   return (
     <div>
       <p className="text-xs text-gray-500 uppercase tracking-wider leading-none mb-1">{label}</p>
@@ -38,14 +48,18 @@ function Metric({ label, value, unit }) {
   )
 }
 
-export default function TurbineCard({ turbine }) {
+interface TurbineCardProps {
+  turbine: Turbine
+}
+
+export default function TurbineCard({ turbine }: TurbineCardProps) {
   const m            = turbine.latestMetric
   const displayState = getTurbineDisplayState(turbine)
   const isRunning    = displayState === 'running'
   const worstStatus  = turbine.isInMaintenance ? 'idle'
                      : displayState === 'offline' ? 'idle'
-                     : getWorstStatus(m, isRunning)
-  const borderKey    = turbine.isInMaintenance ? 'maintenance'
+                     : m ? getWorstStatus(m, isRunning) : 'idle'
+  const borderKey: BorderKey = turbine.isInMaintenance ? 'maintenance'
                      : displayState === 'offline' ? 'offline'
                      : worstStatus
 

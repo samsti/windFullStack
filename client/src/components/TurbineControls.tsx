@@ -1,9 +1,15 @@
 import { useState, useRef } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { sendCommand, setMaintenance } from '../services/api'
+import type { CommandPayload, MaintenancePayload } from '../types'
 
 // ── Section card ──────────────────────────────────────────────────────────────
-function ControlCard({ title, children }) {
+interface ControlCardProps {
+  title: string
+  children: React.ReactNode
+}
+
+function ControlCard({ title, children }: ControlCardProps) {
   return (
     <div className="bg-gray-950 border border-gray-800 rounded-xl p-4 flex flex-col gap-4">
       <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">{title}</p>
@@ -13,7 +19,17 @@ function ControlCard({ title, children }) {
 }
 
 // ── Slider ────────────────────────────────────────────────────────────────────
-function SliderRow({ value, min, max, onChange, color, label, unit }) {
+interface SliderRowProps {
+  value: number
+  min: number
+  max: number
+  onChange: (val: number) => void
+  color: string
+  label: string
+  unit: string
+}
+
+function SliderRow({ value, min, max, onChange, color, label, unit }: SliderRowProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
@@ -44,24 +60,31 @@ function ConfirmBadge() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function TurbineControls({ turbineId, isRunning, currentPitch = 0, isInMaintenance = false }) {
+interface TurbineControlsProps {
+  turbineId: string
+  isRunning: boolean
+  currentPitch?: number
+  isInMaintenance?: boolean
+}
+
+export default function TurbineControls({ turbineId, isRunning, currentPitch = 0, isInMaintenance = false }: TurbineControlsProps) {
   const qc = useQueryClient()
 
   // Local optimistic running state — immediately reflects start/stop click
   // null = defer to prop; true/false = override until telemetry catches up
-  const [optimisticRunning, setOptimisticRunning] = useState(null)
+  const [optimisticRunning, setOptimisticRunning] = useState<boolean | null>(null)
   const effectiveRunning = optimisticRunning !== null ? optimisticRunning : isRunning
 
   const [interval, setIntervalVal] = useState(10)
   const [pitch, setPitch]          = useState(() => Math.round(currentPitch ?? 0))
-  const [confirmed, setConfirmed]  = useState(null)
+  const [confirmed, setConfirmed]  = useState<string | null>(null)
   const [maintReason, setMaintReason] = useState('')
 
   // Track which key to flash — stored in a ref so the mutation-level onSuccess
   // always reads the current value (avoids stale-closure issues)
-  const pendingKey = useRef(null)
+  const pendingKey = useRef<string | null>(null)
 
-  const { mutate: cmd, isPending } = useMutation({
+  const { mutate: cmd, isPending } = useMutation<void, Error, CommandPayload>({
     mutationFn: payload => sendCommand(turbineId, payload),
 
     onSuccess: (_, payload) => {
@@ -95,12 +118,12 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
     },
   })
 
-  const send = (payload, key) => {
+  const send = (payload: CommandPayload, key: string) => {
     pendingKey.current = key
     cmd(payload)
   }
 
-  const { mutate: toggleMaint, isPending: maintPending } = useMutation({
+  const { mutate: toggleMaint, isPending: maintPending } = useMutation<void, Error, MaintenancePayload>({
     mutationFn: payload => setMaintenance(turbineId, payload),
     onSuccess: () => {
       setConfirmed('maintenance')

@@ -1,3 +1,5 @@
+import type { Turbine } from '../types'
+
 const STALE_MS = 5 * 60 * 1000 // 5 minutes — matches OfflineDetectionService.StaleAge
 
 /**
@@ -6,7 +8,7 @@ const STALE_MS = 5 * 60 * 1000 // 5 minutes — matches OfflineDetectionService.
  * - running: recent telemetry with status === 'running'
  * - stopped: recent telemetry but status !== 'running'
  */
-export function getTurbineDisplayState(turbine) {
+export function getTurbineDisplayState(turbine: Turbine | null | undefined): 'running' | 'stopped' | 'offline' {
   if (!turbine) return 'offline'
   const lastSeen = turbine.lastSeenAt ? new Date(turbine.lastSeenAt) : null
   const isStale  = !lastSeen || Date.now() - lastSeen.getTime() > STALE_MS

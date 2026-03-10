@@ -1,27 +1,23 @@
+import type { TurbineMetric } from '../types'
+
 // Aerodynamic blade path (hub-relative, points upward)
 // Blade radius scaled to 100 px (was 82)
 const BLADE = 'M 0 5 C -7 -6 -10 -46 -5 -88 C -2 -100 2 -100 5 -88 C 10 -46 7 -6 0 5 Z'
 
 // ── Status system ────────────────────────────────────────────────────────────
 
-const STATUS = {
+type StatusKey = 'good' | 'warning' | 'critical' | 'idle'
+
+const STATUS: Record<StatusKey, { color: string; label: string; bg: string }> = {
   good:     { color: '#22c55e', label: 'NORMAL',   bg: '#020d06' },
   warning:  { color: '#f59e0b', label: 'WARNING',  bg: '#0f0900' },
   critical: { color: '#ef4444', label: 'CRITICAL', bg: '#0f0202' },
   idle:     { color: '#4b5563', label: 'OFFLINE',  bg: '#0a0a0f' },
 }
 
-/**
- * Classify a metric value as good / warning / critical (or idle when offline).
- * Thresholds are based on typical IEC 61400 / industry practice.
- *
- * rotorSpeed  : cut-in ≈5 RPM, rated ≈15, cut-out ≈25
- * temperatures: warn > 65 °C, critical > 80 °C (for both generator & gearbox)
- * windSpeed   : too low < 3 m/s; storm warning > 20; emergency > 25
- * vibration   : warn > 2.0 g; critical > 4.0 g
- * powerOutput : if running but < 50 kW something is off → warning
- */
-function classify(key, value, running) {
+type MetricKey = keyof TurbineMetric
+
+function classify(key: MetricKey, value: number, running: boolean): StatusKey {
   if (!running || value == null) return 'idle'
   switch (key) {
     case 'generatorTemp':
@@ -44,17 +40,20 @@ function classify(key, value, running) {
 
 // ── Callout annotation (pure SVG) ────────────────────────────────────────────
 
-/**
- * A labelled box attached to a windmill component via a dashed connector line.
- *
- * bx / by     – top-left x and centre-y of the box
- * lineFrom    – [x, y] point on the windmill component (dot drawn here)
- * align       – 'left'  → box is left of windmill, face at bx+W
- *               'right' → box is right of windmill, face at bx
- */
-function Callout({ bx, by, label, value, unit, statusKey, lineFrom, align = 'right' }) {
+interface CalloutProps {
+  bx: number
+  by: number
+  label: string
+  value: string
+  unit: string
+  statusKey: StatusKey | string
+  lineFrom: [number, number]
+  align?: 'left' | 'right'
+}
+
+function Callout({ bx, by, label, value, unit, statusKey, lineFrom, align = 'right' }: CalloutProps) {
   const W = 140, H = 40, R = 5
-  const s = STATUS[statusKey] || STATUS.idle
+  const s = STATUS[statusKey as StatusKey] ?? STATUS.idle
   const ry = by - H / 2
   const faceX = align === 'left' ? bx + W : bx
 
@@ -104,7 +103,12 @@ function Callout({ bx, by, label, value, unit, statusKey, lineFrom, align = 'rig
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function WindmillVisualization({ latest, isRunning }) {
+interface WindmillVisualizationProps {
+  latest: TurbineMetric | null | undefined
+  isRunning: boolean
+}
+
+export default function WindmillVisualization({ latest, isRunning }: WindmillVisualizationProps) {
   const rotorSpeed    = latest?.rotorSpeed         ?? 0
   const windSpeed     = latest?.windSpeed           ?? 0
   const powerOutput   = latest?.powerOutput         ?? 0
@@ -116,7 +120,7 @@ export default function WindmillVisualization({ latest, isRunning }) {
 
   // Blade spin: RPM → seconds per revolution
   const spinDuration = isRunning && rotorSpeed > 0 ? (60 / rotorSpeed).toFixed(2) : null
-  const spinStyle = spinDuration
+  const spinStyle: React.CSSProperties = spinDuration
     ? { animation: `windmill-spin ${spinDuration}s linear infinite`, transformOrigin: '0 0' }
     : {}
 
@@ -146,11 +150,8 @@ export default function WindmillVisualization({ latest, isRunning }) {
   }
 
   // ── Windmill geometry (hub centred at 258, 165) ──
-  // HX shifted left to keep clearance: left blade tip 258-100=158 vs callout face 145 (+13 px)
-  //                                    right blade tip 258+100=358 vs callout face 375 (+17 px)
   const HX = 258, HY = 165
-  // Tower right edge at y (interp: top ±8 px → base ±22 px)
-  const towerRightAt = y => HX + 8 + ((y - (HY + 11)) / (295 - HY - 11)) * 14
+  const towerRightAt = (y: number) => HX + 8 + ((y - (HY + 11)) / (295 - HY - 11)) * 14
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden mb-8">
@@ -188,8 +189,7 @@ export default function WindmillVisualization({ latest, isRunning }) {
           style={isRunning ? { animation: 'power-pulse 2.5s ease-in-out infinite' } : {}}
         />
 
-        {/* ── Wind streaks — start at x=145 (clear of left callout boxes),
-               animate +175 px rightward, fade before reaching right callouts at x=362 ── */}
+        {/* ── Wind streaks ── */}
         {isRunning && streakYs.map((y, i) => (
           <line key={i}
             x1={145} y1={y}
@@ -246,7 +246,9 @@ export default function WindmillVisualization({ latest, isRunning }) {
         {/* ── Wind compass (top-right) ── */}
         <g transform="translate(590, 36)">
           <circle r="22" fill="#07090f" stroke="#1e293b" strokeWidth="1.5" />
-          {[['N', 0, -14], ['S', 0, 17], ['W', -16, 2], ['E', 16, 2]].map(([d, dx, dy]) => (
+          {(
+            [['N', 0, -14], ['S', 0, 17], ['W', -16, 2], ['E', 16, 2]] as [string, number, number][]
+          ).map(([d, dx, dy]) => (
             <text key={d} x={dx} y={dy}
               textAnchor="middle" dominantBaseline="middle"
               fill="#374151" fontSize="7" fontFamily="system-ui" fontWeight="600">
@@ -262,8 +264,7 @@ export default function WindmillVisualization({ latest, isRunning }) {
           {windDir?.toFixed(0)}° wind
         </text>
 
-        {/* ── Left callouts (face at bx+140=145, blade tip at HX-100=158 → +13 px gap) ── */}
-
+        {/* ── Left callouts ── */}
         <Callout
           bx={5} by={80}
           label="WIND SPEED"
@@ -281,8 +282,7 @@ export default function WindmillVisualization({ latest, isRunning }) {
           align="left"
         />
 
-        {/* ── Right callouts (face at bx=375, blade tip at HX+100=358 → +17 px gap) ── */}
-
+        {/* ── Right callouts ── */}
         <Callout
           bx={375} by={95}
           label="GENERATOR TEMP"
@@ -317,11 +317,9 @@ export default function WindmillVisualization({ latest, isRunning }) {
         />
 
         {/* ── Status legend (ground strip) ── */}
-        {[
-          ['#22c55e', 'NORMAL — all clear'],
-          ['#f59e0b', 'WARNING — attention needed'],
-          ['#ef4444', 'CRITICAL — act immediately'],
-        ].map(([color, text], i) => (
+        {(
+          [['#22c55e', 'NORMAL — all clear'], ['#f59e0b', 'WARNING — attention needed'], ['#ef4444', 'CRITICAL — act immediately']] as [string, string][]
+        ).map(([color, text], i) => (
           <g key={text} transform={`translate(${105 + i * 145}, 305)`}>
             <circle r="3.5" fill={color} opacity="0.85" />
             <text x="8" y="1"

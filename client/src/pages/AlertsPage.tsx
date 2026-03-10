@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getAlerts, acknowledgeAlert } from '../services/api'
+import type { Alert } from '../types'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const SEV = {
+type SevKey = 'critical' | 'warning' | 'info'
+
+const SEV: Record<SevKey, { border: string; badge: string; dot: string; glow: string }> = {
   critical: {
     border: 'border-red-800',
     badge:  'bg-red-950/60 text-red-400 border border-red-800',
@@ -26,11 +29,11 @@ const SEV = {
   },
 }
 
-function sev(s) {
-  return SEV[s?.toLowerCase()] ?? SEV.info
+function sev(s: string | undefined) {
+  return SEV[(s?.toLowerCase() as SevKey)] ?? SEV.info
 }
 
-function timeAgo(iso) {
+function timeAgo(iso: string | null | undefined): string {
   if (!iso) return ''
   const diff = Date.now() - new Date(iso).getTime()
   const m = Math.floor(diff / 60_000)
@@ -43,7 +46,13 @@ function timeAgo(iso) {
 
 // ── Alert row ─────────────────────────────────────────────────────────────────
 
-function AlertRow({ alert, onAck, ackPending }) {
+interface AlertRowProps {
+  alert: Alert
+  onAck: (id: string) => void
+  ackPending: boolean
+}
+
+function AlertRow({ alert, onAck, ackPending }: AlertRowProps) {
   const s = sev(alert.severity)
   return (
     <div className={`
@@ -100,7 +109,9 @@ function AlertRow({ alert, onAck, ackPending }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-const FILTERS = [
+type FilterKey = 'all' | 'unack' | 'critical' | 'warning'
+
+const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'all',      label: 'All' },
   { key: 'unack',    label: 'Unacknowledged' },
   { key: 'critical', label: 'Critical' },
@@ -108,16 +119,16 @@ const FILTERS = [
 ]
 
 export default function AlertsPage() {
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState<FilterKey>('all')
   const qc = useQueryClient()
 
-  const { data: alerts = [], isLoading } = useQuery({
+  const { data: alerts = [], isLoading } = useQuery<Alert[]>({
     queryKey: ['alerts', filter === 'unack'],
     queryFn: () => getAlerts(100, filter === 'unack'),
     refetchInterval: 10_000,
   })
 
-  const { mutate: ack, isPending: ackPending } = useMutation({
+  const { mutate: ack, isPending: ackPending } = useMutation<void, Error, string>({
     mutationFn: acknowledgeAlert,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
   })

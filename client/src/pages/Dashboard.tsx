@@ -5,6 +5,7 @@ import { useSSE } from '../hooks/useSSE'
 import TurbineCard from '../components/TurbineCard'
 import { TotalPowerChart, WindAndTempChart } from '../components/charts/FarmOverviewChart'
 import { getTurbineDisplayState } from '../utils/turbineStatus'
+import type { Turbine, FarmOverviewPoint } from '../types'
 
 const OVERVIEW_RANGES = [
   { label: '1h',  minutes: 60,     bucket: 1    },
@@ -14,7 +15,14 @@ const OVERVIEW_RANGES = [
   { label: 'All', minutes: 0,      bucket: 1440 },
 ]
 
-function StatCard({ label, value, unit, color = 'text-white' }) {
+interface StatCardProps {
+  label: string
+  value: string | number | null | undefined
+  unit?: string
+  color?: string
+}
+
+function StatCard({ label, value, unit, color = 'text-white' }: StatCardProps) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl px-5 py-4 flex flex-col gap-1">
       <p className="text-xs text-gray-500 uppercase tracking-wider">{label}</p>
@@ -30,20 +38,20 @@ export default function Dashboard() {
   const [overviewRangeIdx, setOverviewRangeIdx] = useState(0)
   const overviewRange = OVERVIEW_RANGES[overviewRangeIdx]
 
-  const { data: initial, isLoading } = useQuery({
+  const { data: initial, isLoading } = useQuery<Turbine[]>({
     queryKey: ['turbines'],
     queryFn: getTurbines,
     refetchInterval: 10_000,
   })
 
-  const { data: overview, isFetching: overviewFetching } = useQuery({
+  const { data: overview, isFetching: overviewFetching } = useQuery<FarmOverviewPoint[]>({
     queryKey: ['overview', overviewRange.minutes, overviewRange.bucket],
     queryFn: () => getFarmOverview(overviewRange.minutes, overviewRange.bucket),
     refetchInterval: overviewRange.minutes <= 60 ? 30_000 : overviewRange.minutes <= 1440 ? 60_000 : 5 * 60_000,
   })
 
-  const { data: live, connected } = useSSE('/api/turbines/live')
-  const [turbines, setTurbines] = useState([])
+  const { data: live, connected } = useSSE<Turbine[]>('/api/turbines/live')
+  const [turbines, setTurbines] = useState<Turbine[]>([])
 
   useEffect(() => {
     if (live) setTurbines(live)
@@ -112,7 +120,7 @@ export default function Dashboard() {
       )}
 
       {/* Farm-wide trend charts */}
-      {(overview?.length > 0 || overviewFetching) && (
+      {(overview && overview.length > 0 || overviewFetching) && (
         <div className="mt-10">
           <div className="flex items-center gap-4 mb-4">
             <h2 className="text-lg font-semibold text-white">Farm Trends</h2>
@@ -138,7 +146,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          {overview?.length > 0 ? (
+          {overview && overview.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <TotalPowerChart data={overview} bucket={overviewRange.bucket} />
               <WindAndTempChart data={overview} bucket={overviewRange.bucket} />

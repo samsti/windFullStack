@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
-export function useSSE(path) {
-  const [data, setData] = useState(null)
+export function useSSE<T>(path: string): { data: T | null; connected: boolean } {
+  const [data, setData] = useState<T | null>(null)
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
@@ -13,9 +13,9 @@ export function useSSE(path) {
 
     es.onmessage = e => {
       try {
-        const parsed = JSON.parse(e.data)
+        const parsed = JSON.parse(e.data as string)
         // StateleSSE wraps payload in { group, data }
-        setData(parsed?.data ?? parsed)
+        setData((parsed?.data ?? parsed) as T)
       } catch {}
     }
 

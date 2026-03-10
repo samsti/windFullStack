@@ -8,7 +8,7 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 5_000, retry: 1 } },
 })
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />

@@ -8,10 +8,14 @@ import AlertBell     from './components/AlertBell'
 import LoginModal    from './components/LoginModal'
 import { auth }      from './services/api'
 
-function Navbar({ onLogout }) {
+interface NavbarProps {
+  onLogout: () => void
+}
+
+function Navbar({ onLogout }: NavbarProps) {
   const { pathname } = useLocation()
 
-  const link = (to, label) => (
+  const link = (to: string, label: string) => (
     <Link
       to={to}
       className={`text-sm transition-colors ${

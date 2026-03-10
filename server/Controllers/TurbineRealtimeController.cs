@@ -15,7 +15,7 @@ public class TurbineRealtimeController(
     IRealtimeManager realtimeManager,
     AppDbContext db) : RealtimeControllerBase(backplane)
 {
-    // SSE endpoint — pushes latest metric snapshot for every turbine whenever new data arrives
+    // SSE endpoint 
     [HttpGet("api/turbines/live")]
     public async Task<RealtimeListenResponse<List<object>>> GetLive(string connectionId)
     {

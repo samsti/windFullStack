@@ -2,8 +2,9 @@ import {
   LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
+import type { TooltipProps } from 'recharts'
 
-const COLORS = {
+const COLORS: Record<string, string> = {
   windSpeed:          '#06b6d4',
   powerOutput:        '#10b981',
   rotorSpeed:         '#8b5cf6',
@@ -16,35 +17,51 @@ const COLORS = {
   nacelleDirection:   '#a78bfa',
 }
 
-function makeFormatter(bucket) {
+function makeFormatter(bucket: number): (ts: number) => string {
   if (bucket >= 1440) return ts => new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
   if (bucket >= 60)   return ts => new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
   return ts => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function tooltipLabel(bucket, ts) {
+function tooltipLabel(bucket: number, ts: number): string {
   if (bucket >= 1440) return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
   if (bucket >= 60)   return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   return new Date(ts).toLocaleTimeString()
 }
 
-function CustomTooltip({ active, payload, label, bucket = 1 }) {
+interface CustomTooltipProps extends TooltipProps<number, string> {
+  bucket?: number
+}
+
+function CustomTooltip({ active, payload, label, bucket = 1 }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 text-xs shadow-xl">
-      <p className="text-gray-400 mb-2">{tooltipLabel(bucket, label)}</p>
+      <p className="text-gray-400 mb-2">{tooltipLabel(bucket, label as number)}</p>
       {payload.map(p => (
         <div key={p.dataKey} className="flex items-center gap-2 mb-1">
           <span style={{ color: p.color }}>●</span>
           <span className="text-gray-300">{p.name}:</span>
-          <span className="text-white font-medium">{p.value?.toFixed(2)}</span>
+          <span className="text-white font-medium">{(p.value as number)?.toFixed(2)}</span>
         </div>
       ))}
     </div>
   )
 }
 
-export default function TelemetryChart({ data, metrics, title, bucket = 1 }) {
+interface MetricConfig {
+  key: string
+  label: string
+}
+
+interface TelemetryChartProps {
+  data: Record<string, unknown>[]
+  metrics: MetricConfig[]
+  title: string
+  bucket?: number
+}
+
+export default function TelemetryChart({ data, metrics, title, bucket = 1 }: TelemetryChartProps) {
   const formatXAxis = makeFormatter(bucket)
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">

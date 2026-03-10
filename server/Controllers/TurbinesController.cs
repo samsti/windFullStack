@@ -59,7 +59,7 @@ public class TurbinesController(AppDbContext db) : ControllerBase
     [HttpGet("overview")]
     public async Task<IActionResult> GetOverview([FromQuery] int minutes = 60, [FromQuery] int bucket = 1)
     {
-        var query = db.TurbineMetrics.AsQueryable();
+        var query = db.TurbineMetrics.AsNoTracking().AsQueryable();
         if (minutes > 0)
         {
             var since = DateTime.UtcNow.AddMinutes(-minutes);
@@ -92,6 +92,7 @@ public class TurbinesController(AppDbContext db) : ControllerBase
     {
         var query = db.TurbineMetrics
             .Where(m => m.TurbineId == id)
+            .AsNoTracking()
             .AsQueryable();
 
         if (minutes > 0)
@@ -104,7 +105,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
 
         if (bucket <= 1) return Ok(raw);
 
-        // Bucket into N-minute averages
         var bucketTicks = (long)TimeSpan.TicksPerMinute * bucket;
         var bucketed = raw
             .GroupBy(m => new DateTime(m.RecordedAt.Ticks / bucketTicks * bucketTicks, DateTimeKind.Utc))
@@ -155,7 +155,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         var t = await db.Turbines.FindAsync(id);
         if (t is null) return NotFound();
 
-        // ── Validate parameters per action ───────────────────────────────────
         var validationError = req.Action switch
         {
             "setInterval" when req.Value is null          => "value is required for setInterval",
@@ -167,7 +166,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         };
         if (validationError is not null) return BadRequest(new { error = validationError });
 
-        // ── Build MQTT payload ────────────────────────────────────────────────
         var mqttPayload = req.Action switch
         {
             "start"       => new { action = "start" },
@@ -183,7 +181,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
 
         await mqtt.PublishAsync(topic, payloadJson);
 
-        // ── Persist audit record ──────────────────────────────────────────────
         var issuedBy = User.FindFirstValue(ClaimTypes.Name)
                     ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
                     ?? User.FindFirstValue("sub")

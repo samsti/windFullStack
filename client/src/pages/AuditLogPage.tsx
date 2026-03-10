@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getTurbines, getCommands } from '../services/api'
-
+import type { Turbine, Command } from '../types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function timeAgo(iso) {
+function timeAgo(iso: string | null | undefined): string {
   if (!iso) return ''
   const diff = Date.now() - new Date(iso).getTime()
   const m = Math.floor(diff / 60_000)
@@ -17,9 +17,9 @@ function timeAgo(iso) {
   return `${Math.floor(h / 24)}d ago`
 }
 
-function parsePayloadSummary(payload) {
+function parsePayloadSummary(payload: string): string {
   try {
-    const p = JSON.parse(payload)
+    const p = JSON.parse(payload) as Record<string, unknown>
     if (p.value  != null)  return `interval = ${p.value}s`
     if (p.angle  != null)  return `angle = ${p.angle}°`
     if (p.reason != null)  return `reason: ${p.reason}`
@@ -27,7 +27,7 @@ function parsePayloadSummary(payload) {
   } catch { return '' }
 }
 
-const ACTION_STYLE = {
+const ACTION_STYLE: Record<string, string> = {
   start:       'bg-emerald-950/60 text-emerald-400 border-emerald-800',
   stop:        'bg-red-950/60 text-red-400 border-red-800',
   setInterval: 'bg-cyan-950/60 text-cyan-400 border-cyan-800',
@@ -42,12 +42,12 @@ export default function AuditLogPage() {
   const [turbineFilter, setTurbineFilter] = useState('')
   const [actionFilter,  setActionFilter]  = useState('')
 
-  const { data: turbines = [] } = useQuery({
+  const { data: turbines = [] } = useQuery<Turbine[]>({
     queryKey: ['turbines'],
     queryFn: getTurbines,
   })
 
-  const { data: commands = [], isLoading } = useQuery({
+  const { data: commands = [], isLoading } = useQuery<Command[]>({
     queryKey: ['commands', turbineFilter],
     queryFn: () => getCommands(turbineFilter || null, 200),
     refetchInterval: 30_000,

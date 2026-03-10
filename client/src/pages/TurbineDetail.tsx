@@ -7,6 +7,7 @@ import { useSSE } from '../hooks/useSSE'
 import TelemetryChart from '../components/charts/TelemetryChart'
 import WindmillVisualization from '../components/WindmillVisualization'
 import TurbineControls from '../components/TurbineControls'
+import type { Turbine, Alert, TurbineMetric } from '../types'
 
 const RANGES = [
   { label: '1h',  minutes: 60,     bucket: 1    },
@@ -17,35 +18,35 @@ const RANGES = [
 ]
 
 export default function TurbineDetail() {
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
   const [rangeIdx, setRangeIdx] = useState(0)
   const range = RANGES[rangeIdx]
 
-  const { data: turbine } = useQuery({
+  const { data: turbine } = useQuery<Turbine>({
     queryKey: ['turbine', id],
-    queryFn: () => getTurbine(id),
+    queryFn: () => getTurbine(id!),
   })
 
-  const { data: history, isFetching: historyFetching } = useQuery({
+  const { data: history, isFetching: historyFetching } = useQuery<TurbineMetric[]>({
     queryKey: ['metrics', id, range.minutes, range.bucket],
-    queryFn: () => getTurbineMetrics(id, range.minutes, range.bucket),
+    queryFn: () => getTurbineMetrics(id!, range.minutes, range.bucket),
     refetchInterval: range.minutes <= 60 ? 10_000 : range.minutes <= 1440 ? 60_000 : 5 * 60_000,
   })
 
   const qc = useQueryClient()
 
-  const { data: turbineAlerts = [] } = useQuery({
+  const { data: turbineAlerts = [] } = useQuery<Alert[]>({
     queryKey: ['turbineAlerts', id],
-    queryFn: () => getTurbineAlerts(id, 20),
+    queryFn: () => getTurbineAlerts(id!, 20),
     refetchInterval: 15_000,
   })
 
-  const { mutate: ack } = useMutation({
+  const { mutate: ack } = useMutation<void, Error, string>({
     mutationFn: acknowledgeAlert,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['turbineAlerts', id] }),
   })
 
-  const { data: liveAll, connected } = useSSE('/api/turbines/live')
+  const { data: liveAll, connected } = useSSE<Turbine[]>('/api/turbines/live')
   const live   = liveAll?.find(t => t.id === id)
   const latest = live?.latestMetric ?? history?.[history.length - 1]
 
@@ -114,7 +115,7 @@ export default function TurbineDetail() {
 
       {/* ── Operator controls ── */}
       <TurbineControls
-        turbineId={id}
+        turbineId={id!}
         isRunning={isRunning}
         currentPitch={latest?.bladePitch}
         isInMaintenance={isInMaintenance}
@@ -152,7 +153,7 @@ export default function TurbineDetail() {
         {history && history.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <TelemetryChart
-              data={history}
+              data={history as unknown as Record<string, unknown>[]}
               title="Power & Wind"
               bucket={range.bucket}
               metrics={[
@@ -161,7 +162,7 @@ export default function TurbineDetail() {
               ]}
             />
             <TelemetryChart
-              data={history}
+              data={history as unknown as Record<string, unknown>[]}
               title="Temperatures"
               bucket={range.bucket}
               metrics={[
@@ -203,8 +204,8 @@ export default function TurbineDetail() {
                 alert.severity?.toLowerCase() === 'critical' ? { border: 'border-red-900',   dot: 'bg-red-400',   badge: 'bg-red-950/60 text-red-400 border-red-800'   } :
                 alert.severity?.toLowerCase() === 'warning'  ? { border: 'border-amber-900', dot: 'bg-amber-400', badge: 'bg-amber-950/60 text-amber-400 border-amber-800' } :
                                                                { border: 'border-blue-900',  dot: 'bg-blue-400',  badge: 'bg-blue-950/60 text-blue-400 border-blue-800'  }
-              const ago = iso => {
-                const m = Math.floor((Date.now() - new Date(iso)) / 60000)
+              const ago = (iso: string) => {
+                const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
                 return m < 1 ? 'just now' : m < 60 ? `${m}m ago` : `${Math.floor(m/60)}h ago`
               }
               return (
