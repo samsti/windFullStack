@@ -13,14 +13,12 @@ export const auth = {
   isLoggedIn: ()                => !!localStorage.getItem(TOKEN_KEY),
 }
 
-// Attach JWT on every request
 api.interceptors.request.use(config => {
   const token = auth.getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// On 401, clear stale token and prompt re-login
 api.interceptors.response.use(
   res => res,
   err => {

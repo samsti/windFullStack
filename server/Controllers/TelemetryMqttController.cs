@@ -1,14 +1,14 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Mqtt.Controllers;
 using WindTurbineApi.Data;
+using WindTurbineApi.DTOs;
 using WindTurbineApi.Models;
 using WindTurbineApi.Services;
 
 namespace WindTurbineApi.Controllers;
 
-public class WeatherStationController(
-    ILogger<WeatherStationController> logger,
+public class TelemetryMqttController(
+    ILogger<TelemetryMqttController> logger,
     AppDbContext db,
     IMqttClientService mqtt,
     TurbineStateService state,
@@ -76,20 +76,3 @@ public class WeatherStationController(
     }
 }
 
-public record TurbineTelemetry(
-    [property: JsonPropertyName("turbineId")]          string   TurbineId,
-    [property: JsonPropertyName("turbineName")]        string   TurbineName,
-    [property: JsonPropertyName("farmId")]             string   FarmId,
-    [property: JsonPropertyName("timestamp")]          DateTime Timestamp,
-    [property: JsonPropertyName("windSpeed")]          double   WindSpeed,
-    [property: JsonPropertyName("windDirection")]      double   WindDirection,
-    [property: JsonPropertyName("ambientTemperature")] double   AmbientTemperature,
-    [property: JsonPropertyName("rotorSpeed")]         double   RotorSpeed,
-    [property: JsonPropertyName("powerOutput")]        double   PowerOutput,
-    [property: JsonPropertyName("nacelleDirection")]   double   NacelleDirection,
-    [property: JsonPropertyName("bladePitch")]         double   BladePitch,
-    [property: JsonPropertyName("generatorTemp")]      double   GeneratorTemp,
-    [property: JsonPropertyName("gearboxTemp")]        double   GearboxTemp,
-    [property: JsonPropertyName("vibration")]          double   Vibration,
-    [property: JsonPropertyName("status")]             string   Status
-);

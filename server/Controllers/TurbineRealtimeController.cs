@@ -31,23 +31,18 @@ public class TurbineRealtimeController(
 
     private static async Task<List<object>> BuildSnapshot(AppDbContext ctx)
     {
-        var turbines = await ctx.Turbines.ToListAsync();
-        var result = new List<object>();
-
-        foreach (var t in turbines)
-        {
-            var latest = await ctx.TurbineMetrics
-                .Where(m => m.TurbineId == t.Id)
-                .OrderByDescending(m => m.RecordedAt)
-                .FirstOrDefaultAsync();
-
-            result.Add(new
+        var result = await ctx.Turbines
+            .AsNoTracking()
+            .Select(t => (object)new
             {
                 t.Id, t.Name, t.Location, t.IsOnline, t.LastSeenAt,
                 t.IsInMaintenance, t.MaintenanceSince, t.MaintenanceReason,
-                LatestMetric = latest
-            });
-        }
+                LatestMetric = ctx.TurbineMetrics
+                    .Where(m => m.TurbineId == t.Id)
+                    .OrderByDescending(m => m.RecordedAt)
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
 
         return result;
     }

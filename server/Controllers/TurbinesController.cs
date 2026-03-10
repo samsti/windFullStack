@@ -1,11 +1,21 @@
+// REST API — all HTTP endpoints for turbines, metrics, commands and maintenance
+// GET  /api/turbines                       list all turbines with latest metric
+// GET  /api/turbines/{id}                  single turbine with latest metric
+// GET  /api/turbines/{id}/metrics          historical telemetry (with time bucketing)
+// GET  /api/turbines/overview              farm-wide aggregated chart data
+// GET  /api/turbines/{id}/alerts           recent alerts for one turbine
+// POST /api/turbines/{id}/command          send a command to a turbine via MQTT
+// POST /api/turbines/{id}/maintenance      toggle maintenance mode
+// GET  /api/commands                       full cross-turbine command audit log
+
 using System.Security.Claims;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mqtt.Controllers;
 using WindTurbineApi.Data;
+using WindTurbineApi.DTOs;
 using WindTurbineApi.Models;
 
 namespace WindTurbineApi.Controllers;
@@ -19,20 +29,18 @@ public class TurbinesController(AppDbContext db) : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var turbines = await db.Turbines.ToListAsync();
-        var result = new List<object>();
-
-        foreach (var t in turbines)
-        {
-            var latest = await db.TurbineMetrics
-                .Where(m => m.TurbineId == t.Id)
-                .OrderByDescending(m => m.RecordedAt)
-                .FirstOrDefaultAsync();
-
-            result.Add(new { t.Id, t.Name, t.Location, t.IsOnline, t.LastSeenAt,
-                             t.IsInMaintenance, t.MaintenanceSince, t.MaintenanceReason,
-                             LatestMetric = latest });
-        }
+        var result = await db.Turbines
+            .AsNoTracking()
+            .Select(t => new
+            {
+                t.Id, t.Name, t.Location, t.IsOnline, t.LastSeenAt,
+                t.IsInMaintenance, t.MaintenanceSince, t.MaintenanceReason,
+                LatestMetric = db.TurbineMetrics
+                    .Where(m => m.TurbineId == t.Id)
+                    .OrderByDescending(m => m.RecordedAt)
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
 
         return Ok(result);
     }
@@ -216,6 +224,38 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(commands);
     }
 
+    // GET /api/commands?turbineId=wt-01&limit=200 — cross-turbine command audit log
+    [HttpGet("/api/commands")]
+    public async Task<IActionResult> GetCommandLog(
+        [FromQuery] string? turbineId = null,
+        [FromQuery] int     limit     = 200)
+    {
+        var q = db.OperatorCommands
+            .Include(c => c.Turbine)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(turbineId))
+            q = q.Where(c => c.TurbineId == turbineId);
+
+        var commands = await q
+            .OrderByDescending(c => c.IssuedAt)
+            .Take(limit)
+            .Select(c => new
+            {
+                c.Id,
+                c.TurbineId,
+                TurbineName = c.Turbine.Name,
+                c.Action,
+                c.Payload,
+                c.IssuedBy,
+                c.IssuedAt,
+                c.Status,
+            })
+            .ToListAsync();
+
+        return Ok(commands);
+    }
+
     // POST /api/turbines/{id}/maintenance — enter or exit maintenance mode
     [HttpPost("{id}/maintenance")]
     public async Task<IActionResult> SetMaintenance(string id, [FromBody] MaintenanceRequest req)
@@ -233,12 +273,3 @@ public class TurbinesController(AppDbContext db) : ControllerBase
     }
 }
 
-public record MaintenanceRequest(
-    [property: JsonPropertyName("enable")] bool    Enable,
-    [property: JsonPropertyName("reason")] string? Reason = null);
-
-public record TurbineCommandRequest(
-    [property: JsonPropertyName("action")] string  Action,
-    [property: JsonPropertyName("reason")] string? Reason = null,
-    [property: JsonPropertyName("value")]  int?    Value  = null,
-    [property: JsonPropertyName("angle")]  double? Angle  = null);

@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
 using Mqtt.Controllers;
 using WindTurbineApi.Data;
+using WindTurbineApi.DTOs;
 using WindTurbineApi.Models;
 
 namespace WindTurbineApi.Controllers;
@@ -28,10 +28,3 @@ public class AlertMqttController(
     }
 }
 
-public record TurbineAlert(
-    [property: JsonPropertyName("turbineId")] string   TurbineId,
-    [property: JsonPropertyName("farmId")]    string   FarmId,
-    [property: JsonPropertyName("timestamp")] DateTime Timestamp,
-    [property: JsonPropertyName("severity")]  string   Severity,
-    [property: JsonPropertyName("message")]   string   Message
-);

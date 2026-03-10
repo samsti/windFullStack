@@ -1,11 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WindTurbineApi.Data;
+using WindTurbineApi.DTOs;
 
 namespace WindTurbineApi.Controllers;
 
@@ -48,6 +48,3 @@ public class AuthController(AppDbContext db, IConfiguration config) : Controller
     }
 }
 
-public record LoginRequest(
-    [property: JsonPropertyName("email")]    string Email,
-    [property: JsonPropertyName("password")] string Password);

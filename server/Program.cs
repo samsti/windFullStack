@@ -6,6 +6,7 @@ using Mqtt.Controllers;
 using StateleSSE.AspNetCore;
 using StateleSSE.AspNetCore.EfRealtime;
 using WindTurbineApi.Data;
+using WindTurbineApi.Middleware;
 using WindTurbineApi.Models;
 using WindTurbineApi.Services;
 
@@ -55,6 +56,9 @@ builder.Services.AddControllers()
         System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 builder.Services.AddMqttControllers();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 builder.Services.AddSingleton<TurbineStateService>();
 builder.Services.AddScoped<AlertService>();
 builder.Services.AddHostedService<OfflineDetectionService>();
@@ -88,6 +92,8 @@ var mqtt = app.Services.GetRequiredService<IMqttClientService>();
 await mqtt.ConnectAsync(
     builder.Configuration["Mqtt:BrokerHost"]!,
     int.Parse(builder.Configuration["Mqtt:BrokerPort"]!));
+
+app.UseExceptionHandler();
 
 app.UseSwagger();
 app.UseSwaggerUI();
