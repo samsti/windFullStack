@@ -1,10 +1,7 @@
 import type { TurbineMetric } from '../types'
 
 // Aerodynamic blade path (hub-relative, points upward)
-// Blade radius scaled to 100 px (was 82)
 const BLADE = 'M 0 5 C -7 -6 -10 -46 -5 -88 C -2 -100 2 -100 5 -88 C 10 -46 7 -6 0 5 Z'
-
-// ── Status system ────────────────────────────────────────────────────────────
 
 type StatusKey = 'good' | 'warning' | 'critical' | 'idle'
 
@@ -37,9 +34,6 @@ function classify(key: MetricKey, value: number, running: boolean): StatusKey {
       return 'good'
   }
 }
-
-// ── Callout annotation (pure SVG) ────────────────────────────────────────────
-
 interface CalloutProps {
   bx: number
   by: number
@@ -59,21 +53,17 @@ function Callout({ bx, by, label, value, unit, statusKey, lineFrom, align = 'rig
 
   return (
     <g>
-      {/* Dashed connector */}
       <line
         x1={faceX} y1={by}
         x2={lineFrom[0]} y2={lineFrom[1]}
         stroke={s.color} strokeWidth="1" strokeOpacity="0.35" strokeDasharray="4 3"
       />
-      {/* Dot on turbine component */}
       <circle cx={lineFrom[0]} cy={lineFrom[1]} r="3" fill={s.color} opacity="0.9" />
 
-      {/* Box */}
       <rect x={bx} y={ry} width={W} height={H} rx={R} fill={s.bg} />
       <rect x={bx} y={ry} width={W} height={H} rx={R}
         fill="none" stroke={s.color} strokeWidth="1" strokeOpacity="0.5" />
 
-      {/* Label + status badge on same row */}
       <text
         x={bx + 8} y={ry + 12}
         dominantBaseline="middle"
@@ -92,7 +82,6 @@ function Callout({ bx, by, label, value, unit, statusKey, lineFrom, align = 'rig
         {s.label}
       </text>
 
-      {/* Value + unit */}
       <text x={bx + 8} y={ry + 29} dominantBaseline="middle" fontFamily="system-ui">
         <tspan fill="white" fontWeight="700" fontSize="16">{value}</tspan>
         <tspan fill="#6b7280" fontWeight="400" fontSize="9" dx="3">{unit}</tspan>
@@ -101,7 +90,6 @@ function Callout({ bx, by, label, value, unit, statusKey, lineFrom, align = 'rig
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
 
 interface WindmillVisualizationProps {
   latest: TurbineMetric | null | undefined
@@ -118,28 +106,23 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
   const bladePitch    = latest?.bladePitch          ?? 0
   const vibration     = latest?.vibration           ?? 0
 
-  // Blade spin: RPM → seconds per revolution
   const spinDuration = isRunning && rotorSpeed > 0 ? (60 / rotorSpeed).toFixed(2) : null
   const spinStyle: React.CSSProperties = spinDuration
     ? { animation: `windmill-spin ${spinDuration}s linear infinite`, transformOrigin: '0 0' }
     : {}
 
-  // Power ground-glow intensity (0–2000 kW nominal range)
   const powerPct    = Math.min(100, (powerOutput / 2000) * 100)
   const glowOpacity = isRunning ? 0.1 + (powerPct / 100) * 0.45 : 0
 
-  // Nacelle heat colour (generator temp)
   const nacelleFill   = generatorTemp > 80 ? '#3b0000' : generatorTemp > 65 ? '#1c0900' : '#0f172a'
   const nacelleStroke = generatorTemp > 80 ? '#ef4444' : generatorTemp > 65 ? '#f97316' : '#334155'
   const nacelleGlow   = generatorTemp > 65
     ? `drop-shadow(0 0 7px ${generatorTemp > 80 ? '#ef444455' : '#f9731640'})`
     : 'none'
 
-  // Wind streak speed (faster at higher wind)
   const streakSpeed = windSpeed > 0 ? Math.max(0.6, 3 - (windSpeed / 30) * 2.4) : 2
   const streakYs    = [35, 62, 90, 118, 152, 185, 222, 258]
 
-  // Classify every metric
   const st = {
     generatorTemp: classify('generatorTemp', generatorTemp, isRunning),
     gearboxTemp:   classify('gearboxTemp',   gearboxTemp,   isRunning),
@@ -149,7 +132,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
     vibration:     classify('vibration',     vibration,     isRunning),
   }
 
-  // ── Windmill geometry (hub centred at 258, 165) ──
   const HX = 258, HY = 165
   const towerRightAt = (y: number) => HX + 8 + ((y - (HY + 11)) / (295 - HY - 11)) * 14
 
@@ -178,18 +160,15 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           </radialGradient>
         </defs>
 
-        {/* ── Background ── */}
         <rect width="620" height="295" fill="#020712" />
         <rect x="0" y="295" width="620" height="20" fill="#031209" />
 
-        {/* Power glow at base */}
         <ellipse
           cx={HX} cy="296" rx="72" ry="22"
           fill="url(#wv-glow)"
           style={isRunning ? { animation: 'power-pulse 2.5s ease-in-out infinite' } : {}}
         />
 
-        {/* ── Wind streaks ── */}
         {isRunning && streakYs.map((y, i) => (
           <line key={i}
             x1={145} y1={y}
@@ -204,7 +183,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           />
         ))}
 
-        {/* ── Tower ── */}
         <path
           d={`M ${HX - 8} ${HY + 11} L ${HX - 22} 295 L ${HX + 22} 295 L ${HX + 8} ${HY + 11} Z`}
           fill="url(#wv-tower)"
@@ -212,7 +190,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
         <line x1={HX} y1={HY + 11} x2={HX} y2="295"
           stroke="#475569" strokeWidth="0.5" opacity="0.3" />
 
-        {/* ── Nacelle ── */}
         <rect
           x={HX - 23} y={HY - 15} width="46" height="22" rx="6"
           fill={nacelleFill} stroke={nacelleStroke} strokeWidth="1.5"
@@ -223,7 +200,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           stroke={nacelleStroke} strokeWidth="0.5" opacity="0.4"
         />
 
-        {/* ── Hub ── */}
         <circle
           cx={HX} cy={HY} r="11"
           fill={isRunning ? '#1d4ed8' : '#1e293b'}
@@ -232,7 +208,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
         />
         <circle cx={HX} cy={HY} r="4.5" fill={isRunning ? '#93c5fd' : '#374151'} />
 
-        {/* ── Rotating blades ── */}
         <g transform={`translate(${HX}, ${HY})`}>
           <g style={spinStyle}>
             {[0, 120, 240].map(a => (
@@ -243,7 +218,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           </g>
         </g>
 
-        {/* ── Wind compass (top-right) ── */}
         <g transform="translate(590, 36)">
           <circle r="22" fill="#07090f" stroke="#1e293b" strokeWidth="1.5" />
           {(
@@ -264,7 +238,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           {windDir?.toFixed(0)}° wind
         </text>
 
-        {/* ── Left callouts ── */}
         <Callout
           bx={5} by={80}
           label="WIND SPEED"
@@ -282,7 +255,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           align="left"
         />
 
-        {/* ── Right callouts ── */}
         <Callout
           bx={375} by={95}
           label="GENERATOR TEMP"
@@ -316,7 +288,6 @@ export default function WindmillVisualization({ latest, isRunning }: WindmillVis
           align="right"
         />
 
-        {/* ── Status legend (ground strip) ── */}
         {(
           [['#22c55e', 'NORMAL — all clear'], ['#f59e0b', 'WARNING — attention needed'], ['#ef4444', 'CRITICAL — act immediately']] as [string, string][]
         ).map(([color, text], i) => (

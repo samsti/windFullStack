@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { sendCommand, setMaintenance } from '../services/api'
 import type { CommandPayload, MaintenancePayload } from '../types'
 
-// ── Section card ──────────────────────────────────────────────────────────────
 interface ControlCardProps {
   title: string
   children: React.ReactNode
@@ -18,7 +17,6 @@ function ControlCard({ title, children }: ControlCardProps) {
   )
 }
 
-// ── Slider ────────────────────────────────────────────────────────────────────
 interface SliderRowProps {
   value: number
   min: number
@@ -49,7 +47,6 @@ function SliderRow({ value, min, max, onChange, color, label, unit }: SliderRowP
   )
 }
 
-// ── Confirm flash ─────────────────────────────────────────────────────────────
 function ConfirmBadge() {
   return (
     <div className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-900
@@ -59,7 +56,6 @@ function ConfirmBadge() {
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
 interface TurbineControlsProps {
   turbineId: string
   isRunning: boolean
@@ -70,8 +66,6 @@ interface TurbineControlsProps {
 export default function TurbineControls({ turbineId, isRunning, currentPitch = 0, isInMaintenance = false }: TurbineControlsProps) {
   const qc = useQueryClient()
 
-  // Local optimistic running state — immediately reflects start/stop click
-  // null = defer to prop; true/false = override until telemetry catches up
   const [optimisticRunning, setOptimisticRunning] = useState<boolean | null>(null)
   const effectiveRunning = optimisticRunning !== null ? optimisticRunning : isRunning
 
@@ -80,15 +74,12 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
   const [confirmed, setConfirmed]  = useState<string | null>(null)
   const [maintReason, setMaintReason] = useState('')
 
-  // Track which key to flash — stored in a ref so the mutation-level onSuccess
-  // always reads the current value (avoids stale-closure issues)
   const pendingKey = useRef<string | null>(null)
 
   const { mutate: cmd, isPending } = useMutation<void, Error, CommandPayload>({
     mutationFn: payload => sendCommand(turbineId, payload),
 
     onSuccess: (_, payload) => {
-      // 1. Flash confirmation
       const k = pendingKey.current
       if (k) {
         setConfirmed(k)
@@ -96,15 +87,12 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
         pendingKey.current = null
       }
 
-      // 2. Optimistic running state for start / stop
       if (payload.action === 'start') setOptimisticRunning(true)
       if (payload.action === 'stop')  setOptimisticRunning(false)
-      // Revert after 8 s — by then real telemetry should have arrived via SSE
       if (payload.action === 'start' || payload.action === 'stop') {
         setTimeout(() => setOptimisticRunning(null), 8_000)
       }
 
-      // 3. Refresh queries so charts / alerts update sooner
       setTimeout(() => {
         qc.invalidateQueries({ queryKey: ['turbine', turbineId] })
         qc.invalidateQueries({ queryKey: ['metrics', turbineId] })
@@ -135,7 +123,6 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-8">
-      {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
           Turbine Controls
@@ -145,7 +132,6 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
-        {/* ── Power ── */}
         <ControlCard title="Power">
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -182,7 +168,6 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
           )}
         </ControlCard>
 
-        {/* ── Interval ── */}
         <ControlCard title="Report Interval">
           <SliderRow
             value={interval} min={1} max={60}
@@ -201,7 +186,6 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
           )}
         </ControlCard>
 
-        {/* ── Blade Pitch ── */}
         <ControlCard title="Blade Pitch">
           <SliderRow
             value={pitch} min={0} max={30}
@@ -220,7 +204,6 @@ export default function TurbineControls({ turbineId, isRunning, currentPitch = 0
           )}
         </ControlCard>
 
-        {/* ── Maintenance ── */}
         <ControlCard title="Maintenance">
           <div className="flex items-center gap-2">
             <span className={`w-2 h-2 rounded-full flex-shrink-0 ${

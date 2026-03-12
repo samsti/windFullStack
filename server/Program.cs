@@ -74,7 +74,6 @@ using (var scope = app.Services.CreateScope())
     var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
     db.Database.Migrate();
 
-    // Seed default admin user if no users exist
     if (!db.Users.Any())
     {
         db.Users.Add(new User

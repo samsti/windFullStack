@@ -107,6 +107,23 @@ public class AlertService(AppDbContext db)
             .ToListAsync();
     }
 
+    public async Task<int> AcknowledgeAllWarningsAsync()
+    {
+        var warnings = await db.Alerts
+            .Where(a => !a.IsAcknowledged && a.Severity == "Warning")
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        foreach (var alert in warnings)
+        {
+            alert.IsAcknowledged = true;
+            alert.AcknowledgedAt  = now;
+            alert.AcknowledgedBy  = "operator";
+        }
+        await db.SaveChangesAsync();
+        return warnings.Count;
+    }
+
     public async Task<Alert?> AcknowledgeAsync(int id)
     {
         var alert = await db.Alerts.FindAsync(id);

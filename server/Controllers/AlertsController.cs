@@ -30,6 +30,14 @@ public class AlertsController(AlertService alertService) : ControllerBase
         }));
     }
 
+    // POST /api/alerts/acknowledge-warnings
+    [HttpPost("acknowledge-warnings")]
+    public async Task<IActionResult> AcknowledgeAllWarnings()
+    {
+        var count = await alertService.AcknowledgeAllWarningsAsync();
+        return Ok(new { acknowledged = count });
+    }
+
     // POST /api/alerts/{id}/acknowledge
     [HttpPost("{id}/acknowledge")]
     public async Task<IActionResult> Acknowledge(int id)

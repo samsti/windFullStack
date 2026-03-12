@@ -51,6 +51,9 @@ export const getTurbineAlerts = (id: string, limit = 20): Promise<Alert[]> =>
 export const acknowledgeAlert = (id: string): Promise<void> =>
   api.post(`/alerts/${id}/acknowledge`).then(r => r.data)
 
+export const acknowledgeAllWarnings = (): Promise<{ acknowledged: number }> =>
+  api.post('/alerts/acknowledge-warnings').then(r => r.data)
+
 export const sendCommand = (id: string, payload: CommandPayload): Promise<void> =>
   api.post(`/turbines/${id}/command`, payload).then(r => r.data)
 

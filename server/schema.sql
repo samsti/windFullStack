@@ -1,8 +1,3 @@
--- Wind Turbine Inspection Centre — PostgreSQL schema (Neon)
--- Run once manually, or let EF Core handle it:
---   dotnet ef migrations add Init
---   dotnet ef database update
-
 CREATE TABLE IF NOT EXISTS "Turbines" (
     "Id"          TEXT        NOT NULL PRIMARY KEY,
     "Name"        TEXT        NOT NULL DEFAULT '',

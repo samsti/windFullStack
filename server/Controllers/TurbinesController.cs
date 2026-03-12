@@ -1,13 +1,3 @@
-// REST API — all HTTP endpoints for turbines, metrics, commands and maintenance
-// GET  /api/turbines                       list all turbines with latest metric
-// GET  /api/turbines/{id}                  single turbine with latest metric
-// GET  /api/turbines/{id}/metrics          historical telemetry (with time bucketing)
-// GET  /api/turbines/overview              farm-wide aggregated chart data
-// GET  /api/turbines/{id}/alerts           recent alerts for one turbine
-// POST /api/turbines/{id}/command          send a command to a turbine via MQTT
-// POST /api/turbines/{id}/maintenance      toggle maintenance mode
-// GET  /api/commands                       full cross-turbine command audit log
-
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;

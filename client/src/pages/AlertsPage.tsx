@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getAlerts, acknowledgeAlert } from '../services/api'
+import { getAlerts, acknowledgeAlert, acknowledgeAllWarnings } from '../services/api'
 import type { Alert } from '../types'
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 type SevKey = 'critical' | 'warning' | 'info'
 
@@ -43,8 +41,6 @@ function timeAgo(iso: string | null | undefined): string {
   if (h < 24)  return `${h}h ago`
   return `${Math.floor(h / 24)}d ago`
 }
-
-// ── Alert row ─────────────────────────────────────────────────────────────────
 
 interface AlertRowProps {
   alert: Alert
@@ -133,6 +129,13 @@ export default function AlertsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
   })
 
+  const unackWarningCount = alerts.filter(a => !a.isAcknowledged && a.severity?.toLowerCase() === 'warning').length
+
+  const { mutate: ackAllWarnings, isPending: ackAllPending } = useMutation({
+    mutationFn: acknowledgeAllWarnings,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
+  })
+
   // client-side severity filter (all data already loaded)
   const filtered =
     filter === 'critical' ? alerts.filter(a => a.severity?.toLowerCase() === 'critical') :
@@ -160,6 +163,17 @@ export default function AlertsPage() {
             <span className="px-3 py-1 bg-amber-950/60 text-amber-400 border border-amber-800 rounded-full text-sm font-medium">
               {unackCount} unacknowledged
             </span>
+          )}
+          {unackWarningCount > 0 && (
+            <button
+              onClick={() => ackAllWarnings()}
+              disabled={ackAllPending}
+              className="px-3 py-1 rounded-lg text-sm font-medium
+                bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800
+                text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50"
+            >
+              {ackAllPending ? 'Acknowledging…' : `Acknowledge all warnings (${unackWarningCount})`}
+            </button>
           )}
         </div>
       </div>

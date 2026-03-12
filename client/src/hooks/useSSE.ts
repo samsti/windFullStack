@@ -14,7 +14,6 @@ export function useSSE<T>(path: string): { data: T | null; connected: boolean } 
     es.onmessage = e => {
       try {
         const parsed = JSON.parse(e.data as string)
-        // StateleSSE wraps payload in { group, data }
         setData((parsed?.data ?? parsed) as T)
       } catch {}
     }

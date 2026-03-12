@@ -4,8 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { getTurbines, getCommands } from '../services/api'
 import type { Turbine, Command } from '../types'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function timeAgo(iso: string | null | undefined): string {
   if (!iso) return ''
   const diff = Date.now() - new Date(iso).getTime()
@@ -36,8 +34,6 @@ const ACTION_STYLE: Record<string, string> = {
 
 const ACTIONS = ['start', 'stop', 'setInterval', 'setPitch']
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function AuditLogPage() {
   const [turbineFilter, setTurbineFilter] = useState('')
   const [actionFilter,  setActionFilter]  = useState('')
@@ -59,7 +55,6 @@ export default function AuditLogPage() {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Audit Log</h1>
@@ -68,9 +63,7 @@ export default function AuditLogPage() {
         <span className="text-xs text-gray-600 mt-3">{filtered.length} entries</span>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        {/* Turbine dropdown */}
         <select
           value={turbineFilter}
           onChange={e => setTurbineFilter(e.target.value)}
@@ -83,7 +76,6 @@ export default function AuditLogPage() {
           ))}
         </select>
 
-        {/* Action filter tabs */}
         <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
           <button
             onClick={() => setActionFilter('')}
@@ -107,7 +99,6 @@ export default function AuditLogPage() {
         </div>
       </div>
 
-      {/* Table */}
       {isLoading ? (
         <div className="text-gray-500 text-center py-16">Loading…</div>
       ) : filtered.length === 0 ? (

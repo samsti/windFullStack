@@ -70,7 +70,6 @@ export default function Dashboard() {
 
   return (
     <div>
-      {/* Page header */}
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-white">Overview</h1>
@@ -91,7 +90,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Aggregate stats bar */}
       {turbines.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           <StatCard label="Total Power"    value={totalPower.toFixed(0)} unit="kW"  color="text-emerald-400" />
@@ -101,7 +99,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Turbine cards */}
       {isLoading && turbines.length === 0 && (
         <div className="flex items-center justify-center h-48 text-gray-500">Loading turbines…</div>
       )}
@@ -119,7 +116,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Farm-wide trend charts */}
       {(overview && overview.length > 0 || overviewFetching) && (
         <div className="mt-10">
           <div className="flex items-center gap-4 mb-4">

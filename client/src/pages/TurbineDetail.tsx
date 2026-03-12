@@ -50,8 +50,6 @@ export default function TurbineDetail() {
   const live   = liveAll?.find(t => t.id === id)
   const latest = live?.latestMetric ?? history?.[history.length - 1]
 
-  // Use SSE for running/stopped/offline (updates every telemetry tick)
-  // Use REST turbine query for maintenance (SSE only fires on TurbineMetric changes, not Turbine)
   const statusSource    = live ?? turbine
   const displayState    = getTurbineDisplayState(statusSource)
   const isRunning       = displayState === 'running'
@@ -59,7 +57,6 @@ export default function TurbineDetail() {
 
   return (
     <div>
-      {/* ── Header ── */}
       <div className="flex items-center gap-4 mb-6">
         <Link
           to="/"
@@ -96,7 +93,6 @@ export default function TurbineDetail() {
         </div>
       </div>
 
-      {/* ── Offline / maintenance banners ── */}
       {displayState === 'offline' && (
         <div className="mb-4 px-4 py-3 rounded-xl border border-gray-700 bg-gray-900/80 text-gray-400 text-sm flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />
@@ -110,10 +106,8 @@ export default function TurbineDetail() {
         </div>
       )}
 
-      {/* ── Live visualisation ── */}
       <WindmillVisualization latest={latest} isRunning={isRunning} />
 
-      {/* ── Operator controls ── */}
       <TurbineControls
         turbineId={id!}
         isRunning={isRunning}
@@ -121,14 +115,12 @@ export default function TurbineDetail() {
         isInMaintenance={isInMaintenance}
       />
 
-      {/* ── Historical trends ── */}
       <div className="mb-2">
         <div className="flex items-center gap-4 mb-4">
           <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
             Historical trends
           </h2>
 
-          {/* Range tabs */}
           <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
             {RANGES.map((r, i) => (
               <button
@@ -180,7 +172,6 @@ export default function TurbineDetail() {
         )}
       </div>
 
-      {/* ── Turbine alerts ── */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
