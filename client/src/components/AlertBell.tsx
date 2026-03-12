@@ -1,17 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { getAlerts } from '../services/api'
-import type { Alert } from '../types'
+import { getUnackSummary } from '../services/api'
 
 export default function AlertBell() {
-  const { data = [] } = useQuery<Alert[]>({
-    queryKey: ['alerts', 'unack'],
-    queryFn: () => getAlerts(100, true),
+  const { data } = useQuery({
+    queryKey: ['alerts', 'unack-summary'],
+    queryFn: getUnackSummary,
     refetchInterval: 15_000,
   })
 
-  const count       = data.length
-  const hasCritical = data.some(a => a.severity?.toLowerCase() === 'critical')
+  const count       = data?.count ?? 0
+  const hasCritical = data?.hasCritical ?? false
 
   return (
     <Link

@@ -85,6 +85,15 @@ public class AlertService(AppDbContext db)
         }
     }
 
+    public async Task<(int Count, bool HasCritical)> GetUnackSummaryAsync()
+    {
+        var unack = await db.Alerts
+            .Where(a => !a.IsAcknowledged)
+            .Select(a => a.Severity)
+            .ToListAsync();
+        return (unack.Count, unack.Any(s => s == "Critical"));
+    }
+
     public async Task<List<Alert>> GetRecentAsync(int limit = 50, bool unackOnly = false)
     {
         var q = db.Alerts

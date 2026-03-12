@@ -30,6 +30,14 @@ public class AlertsController(AlertService alertService) : ControllerBase
         }));
     }
 
+    // GET /api/alerts/unack-summary
+    [HttpGet("unack-summary")]
+    public async Task<IActionResult> UnackSummary()
+    {
+        var (count, hasCritical) = await alertService.GetUnackSummaryAsync();
+        return Ok(new { count, hasCritical });
+    }
+
     // POST /api/alerts/acknowledge-warnings
     [HttpPost("acknowledge-warnings")]
     public async Task<IActionResult> AcknowledgeAllWarnings()
