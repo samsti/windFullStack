@@ -9,9 +9,23 @@ public class AlertMqttController(
     ILogger<AlertMqttController> logger,
     AppDbContext db) : MqttController
 {
+    private static readonly HashSet<string> ValidSeverities = ["Critical", "Warning", "Info"];
+
     [MqttRoute("farm/+/windmill/{turbineId}/alert")]
     public async Task HandleAlert(string turbineId, TurbineAlert data)
     {
+        if (!ValidSeverities.Contains(data.Severity))
+        {
+            logger.LogWarning("Rejected alert from {TurbineId}: invalid severity '{Severity}'", turbineId, data.Severity);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(data.Message) || data.Message.Length > 300)
+        {
+            logger.LogWarning("Rejected alert from {TurbineId}: invalid message length", turbineId);
+            return;
+        }
+
         logger.LogInformation("Alert from {TurbineId}: [{Severity}] {Message}",
             turbineId, data.Severity, data.Message);
 
