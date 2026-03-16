@@ -1,3 +1,5 @@
+  // REST API for turbines — get all/single, time-bucketed metrics + farm overview for charts, per-turbine alerts, send commands via MQTT + audit log, maintenance mode toggle
+
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +17,6 @@ namespace WindTurbineApi.Controllers;
 [Route("api/turbines")]
 public class TurbinesController(AppDbContext db) : ControllerBase
 {
-    // GET /api/turbines — all turbines with their latest metric snapshot
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -35,7 +36,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(result);
     }
 
-    // GET /api/turbines/{id} — single turbine with latest metric
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOne(string id)
     {
@@ -52,7 +52,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
                         LatestMetric = latest });
     }
 
-    // GET /api/turbines/overview?minutes=60&bucket=1
     // minutes=0 = all time; bucket=N = N-minute aggregation window
     [HttpGet("overview")]
     public async Task<IActionResult> GetOverview([FromQuery] int minutes = 60, [FromQuery] int bucket = 1)
@@ -83,7 +82,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(timeSeries);
     }
 
-    // GET /api/turbines/{id}/metrics?minutes=60&bucket=1
     // minutes=0 means all time; bucket=N aggregates into N-minute averages (1 = raw)
     [HttpGet("{id}/metrics")]
     public async Task<IActionResult> GetMetrics(string id, [FromQuery] int minutes = 60, [FromQuery] int bucket = 1)
@@ -126,7 +124,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(bucketed);
     }
 
-    // GET /api/turbines/{id}/alerts?limit=20
     [HttpGet("{id}/alerts")]
     public async Task<IActionResult> GetAlerts(string id, [FromQuery] int limit = 20)
     {
@@ -142,7 +139,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(alerts);
     }
 
-    // POST /api/turbines/{id}/command — forward operator command via MQTT
     [HttpPost("{id}/command")]
     public async Task<IActionResult> SendCommand(
         string id,
@@ -198,7 +194,7 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(new { sent = true, action = req.Action, issuedBy });
     }
 
-    // GET /api/turbines/{id}/commands?limit=50 — full command audit log
+     //full command audit log
     [HttpGet("{id}/commands")]
     public async Task<IActionResult> GetCommands(string id, [FromQuery] int limit = 50)
     {
@@ -214,7 +210,7 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(commands);
     }
 
-    // GET /api/commands?turbineId=wt-01&limit=200 — cross-turbine command audit log
+    //cross-turbine command audit log
     [HttpGet("/api/commands")]
     public async Task<IActionResult> GetCommandLog(
         [FromQuery] string? turbineId = null,
@@ -246,7 +242,6 @@ public class TurbinesController(AppDbContext db) : ControllerBase
         return Ok(commands);
     }
 
-    // POST /api/turbines/{id}/maintenance — enter or exit maintenance mode
     [HttpPost("{id}/maintenance")]
     public async Task<IActionResult> SetMaintenance(string id, [FromBody] MaintenanceRequest req)
     {

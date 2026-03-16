@@ -3,7 +3,7 @@ using WindTurbineApi.Data;
 using WindTurbineApi.Models;
 
 namespace WindTurbineApi.Services;
-
+ 
 public class AlertService(AppDbContext db)
 {
     private record ThresholdCheck(string MetricLabel, string Severity, string Message);
@@ -28,10 +28,10 @@ public class AlertService(AppDbContext db)
         else if (gearboxTemp > 65)
             results.Add(new("Gearbox Temp", "Warning", $"Gearbox Temp warning: {gearboxTemp:F1}°C (limit 65°C)"));
 
-        if (vibration > 4.0)
-            results.Add(new("Vibration", "Critical", $"Vibration critical: {vibration:F2} g (limit 4.00 g)"));
-        else if (vibration > 2.0)
-            results.Add(new("Vibration", "Warning", $"Vibration warning: {vibration:F2} g (limit 2.00 g)"));
+        if (vibration > 5.0)
+            results.Add(new("Vibration", "Critical", $"Vibration critical: {vibration:F2} g (limit 5.00 g)"));
+        else if (vibration > 3.0)
+            results.Add(new("Vibration", "Warning", $"Vibration warning: {vibration:F2} g (limit 3.00 g)"));
 
         if (running)
         {

@@ -31,7 +31,7 @@ api.interceptors.response.use(
 )
 
 export const getTurbines = (): Promise<Turbine[]> =>
-  api.get('/turbines').then(r => r.data)
+  api.get('/turbines').then(r => r.data) 
 
 export const getTurbine = (id: string): Promise<Turbine> =>
   api.get(`/turbines/${id}`).then(r => r.data)
@@ -67,4 +67,4 @@ export const getCommands = (turbineId: string | null = null, limit = 200): Promi
   api.get('/commands', { params: { turbineId: turbineId || undefined, limit } }).then(r => r.data)
 
 export const login = (email: string, password: string): Promise<LoginResponse> =>
-  api.post('/auth/login', { email, password }).then(r => r.data)
+  api.post('/auth/login', { email, password }).then(r => r.data) 

@@ -1,3 +1,5 @@
+  // SSE endpoint — registers browser connections to the "turbines-live" group and pushes a full turbine snapshot whenever new telemetry is saved to the DB
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -5,8 +7,7 @@ using StateleSSE.AspNetCore;
 using StateleSSE.AspNetCore.EfRealtime;
 using WindTurbineApi.Data;
 using WindTurbineApi.Models;
-
-namespace WindTurbineApi.Controllers;
+ namespace WindTurbineApi.Controllers;
 
 [Authorize]
 [ApiController]
@@ -15,14 +16,13 @@ public class TurbineRealtimeController(
     IRealtimeManager realtimeManager,
     AppDbContext db) : RealtimeControllerBase(backplane)
 {
-    // SSE endpoint 
     [HttpGet("api/turbines/live")]
     public async Task<RealtimeListenResponse<List<object>>> GetLive(string connectionId)
     {
         const string group = "turbines-live";
         await backplane.Groups.AddToGroupAsync(connectionId, group);
 
-        realtimeManager.Subscribe<AppDbContext>(connectionId, group,
+        realtimeManager.Subscribe<AppDbContext>(connectionId, group, 
             criteria: changes => changes.HasChanges<TurbineMetric>(),
             query: async ctx => await BuildSnapshot(ctx));
 

@@ -17,13 +17,13 @@ export function useSSE<T>(path: string): { data: T | null; connected: boolean } 
         setData((parsed?.data ?? parsed) as T)
       } catch {}
     }
-
+ 
     es.onerror = () => setConnected(false)
 
     return () => {
       es.close()
       setConnected(false)
-    }
+    } 
   }, [path])
 
   return { data, connected }

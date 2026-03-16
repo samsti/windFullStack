@@ -1,3 +1,5 @@
+  // background service that runs every 60s — marks turbines offline if no telemetry for 5+ min and creates a warning alert 
+
 using Microsoft.EntityFrameworkCore;
 using WindTurbineApi.Data;
 using WindTurbineApi.Models;

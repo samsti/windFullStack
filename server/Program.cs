@@ -32,8 +32,8 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowCredentials());
 });
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+ 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) 
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -60,8 +60,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddSingleton<TurbineStateService>();
-builder.Services.AddScoped<AlertService>();
-builder.Services.AddHostedService<OfflineDetectionService>();
+builder.Services.AddScoped<AlertService>(); //new instance per request
+builder.Services.AddHostedService<OfflineDetectionService>(); //background service, that runs in loops
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

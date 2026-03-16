@@ -1,3 +1,4 @@
+  // singleton that tracks first-contact turbines 
 namespace WindTurbineApi.Services;
 
 public class TurbineStateService
@@ -11,3 +12,4 @@ public class TurbineStateService
             return _configured.Add(turbineId);
     }
 }
+ 

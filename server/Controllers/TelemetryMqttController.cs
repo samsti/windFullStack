@@ -1,3 +1,5 @@
+// receives MQTT telemetry, auto-creates new turbines on first contact + sends setInterval, saves every metric to DB, then runs threshold alert checks via AlertService  
+ 
 using System.Text.Json;
 using Mqtt.Controllers;
 using WindTurbineApi.Data;
