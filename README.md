@@ -41,7 +41,7 @@ ASP.NET Core 10 API  <-->  PostgreSQL (Neon)
 |--------|---------|----------|
 | Generator Temp | > 65 °C | > 80 °C |
 | Gearbox Temp | > 65 °C | > 80 °C |
-| Vibration | > 2.0 g | > 4.0 g |
+| Vibration | > 3.0 g | > 5.0 g |
 | Rotor Speed | < 5 or > 20 RPM | < 2 or > 23 RPM |
 | Wind Speed | < 5 or > 20 m/s | < 2 or > 25 m/s |
 
